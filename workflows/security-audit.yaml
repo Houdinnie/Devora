@@ -1,0 +1,54 @@
+name: Security Audit Pipeline
+description: Comprehensive security assessment of codebases
+category: security
+
+inputs:
+  - name: repo_url
+    required: true
+  - name: scan_type
+    required: false
+    default: "full"
+    description: "full, quick, or specific (owasp, auth, etc.)"
+  - name: include_dependency_scan
+    required: false
+    default: true
+
+llm:
+  provider: ollama
+  model: qwen2.5-coder:14b
+
+steps:
+  - id: setup
+    agent: devops-engineer
+    task: "Clone and set up the repository at {{repo_url}}. List all source files, identify tech stack (languages, frameworks), and check for existing security configs (package.json dependencies, requirements.txt, etc.)."
+    output_var: repo_analysis
+
+  - id: code_review
+    agent: security-engineer
+    task: "Review the codebase from {{repo_analysis}} for security vulnerabilities. Focus on: 1) OWASP Top 10 issues, 2) Authentication/authorization flaws, 3) Input validation, 4) SQL injection, 5) XSS, 6) Secrets in code. Use scan_type: {{scan_type}}."
+    depends_on:
+      - setup
+    output_var: vuln_findings
+
+  - id: dependency_check
+    agent: security-engineer
+    task: "Analyze dependencies from {{repo_analysis}} for known vulnerabilities. Check package-lock.json, requirements.txt, or similar. Include CVE findings if {{include_dependency_scan}} is true."
+    depends_on:
+      - setup
+    output_var: dep_vulns
+
+  - id: api_security
+    agent: security-engineer
+    task: "Review API endpoints in the codebase. Check for: 1) Proper authentication, 2) Rate limiting, 3) Input validation, 4) Error handling that doesn't leak info, 5) CORS config."
+    depends_on:
+      - setup
+    output_var: api_security_findings
+
+  - id: summary
+    agent: incident-commander
+    task: "Create a security audit report. Findings: Code vulnerabilities {{vuln_findings}}, Dependency issues {{dep_vulns}}, API security {{api_security_findings}}. Categorize by severity (Critical, High, Medium, Low) and provide remediation steps. Final verdict and recommendations."
+    depends_on:
+      - vuln_findings
+      - dependency_check
+      - api_security
+    output_var: audit_report

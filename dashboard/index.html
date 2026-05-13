@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devora - AI Orchestra</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- macOS-style Title Bar -->
+        <header class="title-bar">
+            <div class="traffic-lights">
+                <button class="traffic-light close" onclick="handleClose()"></button>
+                <button class="traffic-light minimize" onclick="handleMinimize()"></button>
+                <button class="traffic-light maximize" onclick="handleMaximize()"></button>
+            </div>
+            <div class="title-bar-content">
+                <span class="app-icon">🎼</span>
+                <span class="app-title">Devora</span>
+                <span class="chat-count" id="chatCount">0 chats</span>
+            </div>
+            <div class="title-bar-status">
+                <span class="status-indicator online"></span>
+                <span class="status-text">Talking to Claude</span>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Left Sidebar -->
+            <nav class="sidebar">
+                <div class="sidebar-header">
+                    <button class="new-chat-btn">
+                        <span class="icon">+</span>
+                        New Chat
+                    </button>
+                </div>
+                
+                <div class="nav-sections">
+                    <div class="nav-section">
+                        <div class="nav-item active" data-section="chat">
+                            <span class="nav-icon">💬</span>
+                            <span class="nav-label">Chat</span>
+                        </div>
+                        <div class="nav-item" data-section="agents">
+                            <span class="nav-icon">👥</span>
+                            <span class="nav-label">Agents</span>
+                            <span class="nav-badge">12</span>
+                        </div>
+                        <div class="nav-item" data-section="models">
+                            <span class="nav-icon">🧠</span>
+                            <span class="nav-label">Models</span>
+                        </div>
+                        <div class="nav-item" data-section="channels">
+                            <span class="nav-icon">📱</span>
+                            <span class="nav-label">Channels</span>
+                            <span class="status-dot connected"></span>
+                        </div>
+                        <div class="nav-item" data-section="skills">
+                            <span class="nav-icon">⚡</span>
+                            <span class="nav-label">Skills</span>
+                            <span class="nav-badge">65</span>
+                        </div>
+                        <div class="nav-item" data-section="tasks">
+                            <span class="nav-icon">⏰</span>
+                            <span class="nav-label">Cron Tasks</span>
+                            <span class="task-count">0</span>
+                        </div>
+                        <div class="nav-item" data-section="workflows">
+                            <span class="nav-icon">🔄</span>
+                            <span class="nav-label">Workflows</span>
+                        </div>
+                        <div class="nav-item" data-section="settings">
+                            <span class="nav-icon">⚙️</span>
+                            <span class="nav-label">Settings</span>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <div class="nav-section-title">Business Modules</div>
+                        <div class="nav-item" data-section="crm">
+                            <span class="nav-icon">💰</span>
+                            <span class="nav-label">Sales CRM</span>
+                        </div>
+                        <div class="nav-item" data-section="marketing">
+                            <span class="nav-icon">📣</span>
+                            <span class="nav-label">Marketing</span>
+                        </div>
+                        <div class="nav-item" data-section="projects">
+                            <span class="nav-icon">📋</span>
+                            <span class="nav-label">Projects</span>
+                        </div>
+                        <div class="nav-item" data-section="finance">
+                            <span class="nav-icon">💵</span>
+                            <span class="nav-label">Finance</span>
+                        </div>
+                        <div class="nav-item" data-section="support">
+                            <span class="nav-icon">🎧</span>
+                            <span class="nav-label">Support</span>
+                        </div>
+                        <div class="nav-item" data-section="inventory">
+                            <span class="nav-icon">📦</span>
+                            <span class="nav-label">Inventory</span>
+                        </div>
+                        <div class="nav-item" data-section="hr">
+                            <span class="nav-icon">👥</span>
+                            <span class="nav-label">HR</span>
+                        </div>
+                        <div class="nav-item" data-section="legal">
+                            <span class="nav-icon">⚖️</span>
+                            <span class="nav-label">Legal</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="nav-section" style="margin-top:auto">
+                    <div class="nav-item" id="uploadFilesNav" onclick="showUploadModal(); console.log('Upload clicked')">
+                            <span class="nav-icon">📁</span>
+                            <span class="nav-label">Upload Files</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-footer">
+                    <div class="system-status">
+                        <span class="status-item">
+                            <span class="status-dot online"></span>
+                            Gateway Connected
+                        </span>
+                        <span class="status-item">Port: 3000</span>
+                    </div>
+                    <div class="version">v1.0.0</div>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="content">
+                <!-- Chat Section (Default) -->
+                <section id="chat-section" class="section active">
+                    <div class="chat-container">
+                        <div class="chat-welcome">
+                            <h1>What can I do for you?</h1>
+                            <p>Your AI agents are ready to help</p>
+                        </div>
+                        
+                        <div class="quick-actions">
+                            <button class="action-pill" onclick="startChat('Handle Tasks')">
+                                <span>🎯</span> Handle Tasks
+                            </button>
+                            <button class="action-pill" onclick="startChat('Continuous Execution')">
+                                <span>▶️</span> Continuous Execution
+                            </button>
+                            <button class="action-pill" onclick="startChat('Multi-Agent Parallel')">
+                                <span>🔀</span> Multi-Agent Parallel
+                            </button>
+                            <button class="action-pill" onclick="startChat('Run Workflow')">
+                                <span>📋</span> Run Workflow
+                            </button>
+                        </div>
+
+                        <div class="chat-input-container">
+                            <div class="chat-input-wrapper">
+                                <button class="attach-btn">📎</button>
+                                <input type="text" class="chat-input" placeholder="Message AI Agency..." id="chatInput">
+                                <button class="send-btn" onclick="sendMessage()">➤</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Models Section -->
+                <section id="models-section" class="section">
+                    <div class="section-header">
+                        <h2>AI Models</h2>
+                        <button class="primary-btn" onclick="addProvider()">
+                            <span>+</span> Add Provider
+                        </button>
+                    </div>
+                    
+                    <div class="providers-grid">
+                        <div class="provider-card">
+                            <div class="provider-header">
+                                <span class="provider-icon">🔵</span>
+                                <span class="provider-name">OpenAI</span>
+                                <span class="provider-status active">Active</span>
+                            </div>
+                            <div class="provider-models">GPT-4, GPT-4 Turbo, GPT-3.5</div>
+                            <div class="provider-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Today</span>
+                                    <span class="stat-value">125K tokens</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Cost</span>
+                                    <span class="stat-value">$3.42</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="provider-card">
+                            <div class="provider-header">
+                                <span class="provider-icon">🟣</span>
+                                <span class="provider-name">Anthropic</span>
+                                <span class="provider-status active">Active</span>
+                            </div>
+                            <div class="provider-models">Claude 3.5 Sonnet, Haiku</div>
+                            <div class="provider-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Today</span>
+                                    <span class="stat-value">89K tokens</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Cost</span>
+                                    <span class="stat-value">$2.18</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="provider-card">
+                            <div class="provider-header">
+                                <span class="provider-icon">🟠</span>
+                                <span class="provider-name">Ollama</span>
+                                <span class="provider-status">Local</span>
+                            </div>
+                            <div class="provider-models">llama3.1, qwen2.5, phi4</div>
+                            <div class="provider-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Status</span>
+                                    <span class="stat-value">Running</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="add-provider-card" onclick="addProvider()">
+                            <span class="add-icon">+</span>
+                            <span class="add-text">Add New Provider</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Agents Section -->
+                <section id="agents-section" class="section">
+                    <div class="section-header">
+                        <h2>AI Agents</h2>
+                        <button class="primary-btn" id="addAgentBtn" onclick="showAddAgentModal(); console.log('Add Agent clicked')">
+                            <span>+</span> Add Agent
+                        </button>
+                    </div>
+
+                    <div class="agents-grid">
+                        <div class="agent-card">
+                            <div class="agent-avatar">🧑‍💻</div>
+                            <div class="agent-info">
+                                <h3>Frontend Developer</h3>
+                                <p class="agent-division">Engineering</p>
+                                <p class="agent-specialty">React, Vue, TypeScript</p>
+                            </div>
+                            <div class="agent-stats">
+                                <span class="stat-pill">156 tasks</span>
+                            </div>
+                            <div class="agent-status active"></div>
+                        </div>
+
+                        <div class="agent-card">
+                            <div class="agent-avatar">🏗️</div>
+                            <div class="agent-info">
+                                <h3>Backend Architect</h3>
+                                <p class="agent-division">Engineering</p>
+                                <p class="agent-specialty">API Design, Databases</p>
+                            </div>
+                            <div class="agent-stats">
+                                <span class="stat-pill">89 tasks</span>
+                            </div>
+                            <div class="agent-status active"></div>
+                        </div>
+
+                        <div class="agent-card">
+                            <div class="agent-avatar">🚀</div>
+                            <div class="agent-info">
+                                <h3>DevOps Engineer</h3>
+                                <p class="agent-division">Engineering</p>
+                                <p class="agent-specialty">CI/CD, Docker, K8s</p>
+                            </div>
+                            <div class="agent-stats">
+                                <span class="stat-pill">67 tasks</span>
+                            </div>
+                            <div class="agent-status active"></div>
+                        </div>
+
+                        <div class="agent-card">
+                            <div class="agent-avatar">🎨</div>
+                            <div class="agent-info">
+                                <h3>UI Designer</h3>
+                                <p class="agent-division">Design</p>
+                                <p class="agent-specialty">Figma, UI/UX</p>
+                            </div>
+                            <div class="agent-stats">
+                                <span class="stat-pill">45 tasks</span>
+                            </div>
+                            <div class="agent-status active"></div>
+                        </div>
+
+                        <div class="agent-card">
+                            <div class="agent-avatar">🎯</div>
+                            <div class="agent-info">
+                                <h3>Growth Hacker</h3>
+                                <p class="agent-division">Marketing</p>
+                                <p class="agent-specialty">SEO, Content</p>
+                            </div>
+                            <div class="agent-stats">
+                                <span class="stat-pill">34 tasks</span>
+                            </div>
+                            <div class="agent-status paused"></div>
+                        </div>
+
+                        <div class="agent-card">
+                            <div class="agent-avatar">🔒</div>
+                            <div class="agent-info">
+                                <h3>Security Engineer</h3>
+                                <p class="agent-division">Engineering</p>
+                                <p class="agent-specialty">Penetration Testing</p>
+                            </div>
+                            <div class="agent-stats">
+                                <span class="stat-pill">23 tasks</span>
+                            </div>
+                            <div class="agent-status active"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Channels Section -->
+                <section id="channels-section" class="section">
+                    <div class="section-header">
+                        <h2>Messaging Channels</h2>
+                        <button class="primary-btn" id="addChannelBtn" onclick="showAddChannelModal(); console.log('Add Channel clicked')">
+                            <span>+</span> Add Channel
+                        </button>
+                    </div>
+
+                    <div class="channels-grid">
+                        <div class="channel-card connected">
+                            <div class="channel-header">
+                                <span class="channel-icon">💬</span>
+                                <span class="channel-name">Discord</span>
+                                <span class="channel-status connected">Connected</span>
+                            </div>
+                            <div class="channel-info">
+                                <p>Bot: @AIAgencyBot</p>
+                                <p>Guilds: 3 connected</p>
+                            </div>
+                            <div class="channel-stats">
+                                <span>Messages: 1,247</span>
+                            </div>
+                        </div>
+
+                        <div class="channel-card">
+                            <div class="channel-header">
+                                <span class="channel-icon">✈️</span>
+                                <span class="channel-name">Telegram</span>
+                                <span class="channel-status">Not Connected</span>
+                            </div>
+                            <div class="channel-info">
+                                <p>Configure via @BotFather</p>
+                            </div>
+                            <button class="channel-connect-btn">Connect</button>
+                        </div>
+
+                        <div class="channel-card">
+                            <div class="channel-header">
+                                <span class="channel-icon">📱</span>
+                                <span class="channel-name">WhatsApp</span>
+                                <span class="channel-status">Not Connected</span>
+                            </div>
+                            <div class="channel-info">
+                                <p>Scan QR code to connect</p>
+                            </div>
+                            <button class="channel-connect-btn">Connect</button>
+                        </div>
+
+                        <div class="channel-card">
+                            <div class="channel-header">
+                                <span class="channel-icon">🐦</span>
+                                <span class="channel-name">Twitter/X</span>
+                                <span class="channel-status">Not Connected</span>
+                            </div>
+                            <div class="channel-info">
+                                <p>API integration required</p>
+                            </div>
+                            <button class="channel-connect-btn">Connect</button>
+                        </div>
+
+                        <div class="channel-card">
+                            <div class="channel-header">
+                                <span class="channel-icon">💼</span>
+                                <span class="channel-name">Slack</span>
+                                <span class="channel-status">Not Connected</span>
+                            </div>
+                            <div class="channel-info">
+                                <p>Workspace: Not configured</p>
+                            </div>
+                            <button class="channel-connect-btn">Connect</button>
+                        </div>
+
+                        <div class="channel-card">
+                            <div class="channel-header">
+                                <span class="channel-icon">📧</span>
+                                <span class="channel-name">Email</span>
+                                <span class="channel-status">Not Connected</span>
+                            </div>
+                            <div class="channel-info">
+                                <p>SMTP configuration needed</p>
+                            </div>
+                            <button class="channel-connect-btn">Connect</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Skills Section -->
+                <section id="skills-section" class="section">
+                    <div class="section-header">
+                        <h2>Agent Skills</h2>
+                        <button class="primary-btn" id="addSkillBtn" style="margin-right: 10px;" onclick="showAddSkillModal(); console.log('Add Skill clicked')">
+                            <span>+</span> Add Skill
+                        </button>
+                        <div class="skill-filters">
+                            <button class="filter-btn active">All</button>
+                            <button class="filter-btn">Enabled</button>
+                            <button class="filter-btn">Disabled</button>
+                            <button class="filter-btn">Marketplace</button>
+                        </div>
+                    </div>
+
+                    <div class="skills-stats">
+                        <div class="skill-stat">
+                            <span class="skill-num">65</span>
+                            <span class="skill-label">Total</span>
+                        </div>
+                        <div class="skill-stat">
+                            <span class="skill-num">51</span>
+                            <span class="skill-label">Built-in</span>
+                        </div>
+                        <div class="skill-stat">
+                            <span class="skill-num">14</span>
+                            <span class="skill-label">Marketplace</span>
+                        </div>
+                    </div>
+
+                    <div class="skills-grid">
+                        <div class="skill-card enabled">
+                            <div class="skill-header">
+                                <span class="skill-icon">🔍</span>
+                                <span class="skill-name">Web Research</span>
+                                <label class="skill-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="skill-desc">Search the web and summarize findings</p>
+                        </div>
+
+                        <div class="skill-card enabled">
+                            <div class="skill-header">
+                                <span class="skill-icon">📊</span>
+                                <span class="skill-name">Data Analysis</span>
+                                <label class="skill-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="skill-desc">Analyze datasets and generate insights</p>
+                        </div>
+
+                        <div class="skill-card enabled">
+                            <div class="skill-header">
+                                <span class="skill-icon">🌐</span>
+                                <span class="skill-name">Browser Automation</span>
+                                <label class="skill-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="skill-desc">Navigate websites and extract data</p>
+                        </div>
+
+                        <div class="skill-card enabled">
+                            <div class="skill-header">
+                                <span class="skill-icon">📝</span>
+                                <span class="skill-name">Content Writer</span>
+                                <label class="skill-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="skill-desc">Write blog posts, emails, copy</p>
+                        </div>
+
+                        <div class="skill-card enabled">
+                            <div class="skill-header">
+                                <span class="skill-icon">💻</span>
+                                <span class="skill-name">Code Executor</span>
+                                <label class="skill-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="skill-desc">Run code in sandboxed environments</p>
+                        </div>
+
+                        <div class="skill-card enabled">
+                            <div class="skill-header">
+                                <span class="skill-icon">📁</span>
+                                <span class="skill-name">File Manager</span>
+                                <label class="skill-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="skill-desc">Read, write, organize files</p>
+                        </div>
+
+                        <div class="skill-card">
+                            <div class="skill-header">
+                                <span class="skill-icon">🛒</span>
+                                <span class="skill-name">E-commerce</span>
+                                <label class="skill-toggle">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="skill-desc">Product search, price comparison</p>
+                        </div>
+
+                        <div class="skill-card">
+                            <div class="skill-header">
+                                <span class="skill-icon">📞</span>
+                                <span class="skill-name">Calendar</span>
+                                <label class="skill-toggle">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p class="skill-desc">Manage schedules and events</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Cron Tasks Section -->
+                <section id="tasks-section" class="section">
+                    <div class="section-header">
+                        <h2>Scheduled Tasks</h2>
+                        <button class="primary-btn">
+                            <span>+</span> Add Task
+                        </button>
+                    </div>
+
+                    <div class="task-dashboard">
+                        <div class="task-counter">
+                            <div class="counter">
+                                <span class="counter-num">0</span>
+                                <span class="counter-label">Total</span>
+                            </div>
+                            <div class="counter">
+                                <span class="counter-num">0</span>
+                                <span class="counter-label">Active</span>
+                            </div>
+                            <div class="counter">
+                                <span class="counter-num">0</span>
+                                <span class="counter-label">Paused</span>
+                            </div>
+                            <div class="counter">
+                                <span class="counter-num">0</span>
+                                <span class="counter-label">Failed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empty-state">
+                        <span class="empty-icon">⏰</span>
+                        <h3>No scheduled tasks</h3>
+                        <p>Create your first task to automate workflows</p>
+                        <button class="primary-btn">Create First Task</button>
+                    </div>
+                </section>
+
+                <!-- Workflows Section -->
+                <section id="workflows-section" class="section">
+                    <div class="section-header">
+                        <h2>Workflows</h2>
+                        <button class="primary-btn">
+                            <span>+</span> New Workflow
+                        </button>
+                    </div>
+
+                    <div class="workflows-grid">
+                        <div class="workflow-card">
+                            <div class="workflow-header">
+                                <span class="workflow-icon">🔍</span>
+                                <span class="workflow-name">Code Review Pipeline</span>
+                                <span class="workflow-status active">Active</span>
+                            </div>
+                            <p class="workflow-desc">Multi-agent code review with security, quality, and style checks</p>
+                            <div class="workflow-meta">
+                                <span>4 agents</span>
+                                <span>•</span>
+                                <span>Last run: 2h ago</span>
+                            </div>
+                        </div>
+
+                        <div class="workflow-card">
+                            <div class="workflow-header">
+                                <span class="workflow-icon">🚀</span>
+                                <span class="workflow-name">Startup Launch</span>
+                                <span class="workflow-status active">Active</span>
+                            </div>
+                            <p class="workflow-desc">Full business launch with market research, product, tech, GTM</p>
+                            <div class="workflow-meta">
+                                <span>6 agents</span>
+                                <span>•</span>
+                                <span>Last run: 1d ago</span>
+                            </div>
+                        </div>
+
+                        <div class="workflow-card">
+                            <div class="workflow-header">
+                                <span class="workflow-icon">🔒</span>
+                                <span class="workflow-name">Security Audit</span>
+                                <span class="workflow-status active">Active</span>
+                            </div>
+                            <p class="workflow-desc">Comprehensive security assessment and vulnerability scanning</p>
+                            <div class="workflow-meta">
+                                <span>5 agents</span>
+                                <span>•</span>
+                                <span>Last run: 3d ago</span>
+                            </div>
+                        </div>
+
+                        <div class="workflow-card">
+                            <div class="workflow-header">
+                                <span class="workflow-icon">📊</span>
+                                <span class="workflow-name">Data Analysis</span>
+                                <span class="workflow-status">Draft</span>
+                            </div>
+                            <p class="workflow-desc">Analyze datasets and generate ML recommendations</p>
+                            <div class="workflow-meta">
+                                <span>5 agents</span>
+                                <span>•</span>
+                                <span>Not run yet</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sales CRM Section -->
+                <section id="crm-section" class="section">
+                    <div class="section-header">
+                        <h2>💰 Sales CRM</h2>
+                        <button class="primary-btn" onclick="showModal('Add Lead', '<div class=\\'form-group\\'><label>Company Name</label><input type=\\'text\\' id=\\'leadCompany\\' placeholder=\\'Acme Corp\\'></div><div class=\\'form-group\\'><label>Contact</label><input type=\\'text\\' id=\\'leadContact\\' placeholder=\\'John Smith\\'></div><div class=\\'form-group\\'><label>Email</label><input type=\\'email\\' id=\\'leadEmail\\' placeholder=\\'john@acme.com\\'></div>', [{label:\\'Cancel\\',class:\\'btn-secondary\\',onclick:\\'this.closest(\".modal-overlay\").remove()\\'},{label:\\'Add Lead\\',class:\\'btn-primary\\',onclick:\\'addLead();this.closest(\".modal-overlay\").remove()\\'}])">
+                            <span>+</span> Add Lead
+                        </button>
+                    </div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <span class="stat-num" id="leadsCount">0</span>
+                            <span class="stat-label">Total Leads</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num" id="dealsCount">0</span>
+                            <span class="stat-label">Active Deals</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">$0</span>
+                            <span class="stat-label">Pipeline Value</span>
+                        </div>
+                    </div>
+                    <div class="leads-list" id="leadsList">
+                        <div class="empty-state">
+                            <span class="empty-icon">💰</span>
+                            <h3>No leads yet</h3>
+                            <p>Add your first lead to start tracking prospects</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Marketing Section -->
+                <section id="marketing-section" class="section">
+                    <div class="section-header">
+                        <h2>📣 Marketing</h2>
+                        <button class="primary-btn">
+                            <span>+</span> New Campaign
+                        </button>
+                    </div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Campaigns</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Active Posts</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0%</span>
+                            <span class="stat-label">Avg ROI</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Projects Section -->
+                <section id="projects-section" class="section">
+                    <div class="section-header">
+                        <h2>📋 Projects</h2>
+                        <button class="primary-btn">
+                            <span>+</span> New Project
+                        </button>
+                    </div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Projects</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Tasks</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">In Progress</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Finance Section -->
+                <section id="finance-section" class="section">
+                    <div class="section-header">
+                        <h2>💵 Finance</h2>
+                        <button class="primary-btn">
+                            <span>+</span> Create Invoice
+                        </button>
+                    </div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <span class="stat-num">$0</span>
+                            <span class="stat-label">Revenue</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">$0</span>
+                            <span class="stat-label">Expenses</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">$0</span>
+                            <span class="stat-label">Profit</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Support Section -->
+                <section id="support-section" class="section">
+                    <div class="section-header">
+                        <h2>🎧 Customer Support</h2>
+                        <button class="primary-btn">
+                            <span>+</span> New Ticket
+                        </button>
+                    </div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Open Tickets</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">This Week</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0%</span>
+                            <span class="stat-label">Resolved</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Inventory Section -->
+                <section id="inventory-section" class="section">
+                    <div class="section-header">
+                        <h2>📦 Inventory</h2>
+                        <button class="primary-btn">
+                            <span>+</span> Add Product
+                        </button>
+                    </div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Products</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Low Stock</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Orders</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- HR Section -->
+                <section id="hr-section" class="section">
+                    <div class="section-header">
+                        <h2>👥 HR</h2>
+                        <button class="primary-btn">
+                            <span>+</span> Add Employee
+                        </button>
+                    </div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Employees</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">On Leave</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Open Roles</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Legal Section -->
+                <section id="legal-section" class="section">
+                    <div class="section-header">
+                        <h2>⚖️ Legal</h2>
+                        <button class="primary-btn">
+                            <span>+</span> New Contract
+                        </button>
+                    </div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Contracts</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Pending Signature</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">Expiring Soon</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Section -->
+                <section id="settings-section" class="section">
+                    <div class="section-header">
+                        <h2>Settings</h2>
+                    </div>
+
+                    <div class="settings-groups">
+                        <div class="settings-group">
+                            <h3>Appearance</h3>
+                            <div class="setting-item">
+                                <span class="setting-label">Theme</span>
+                                <div class="theme-selector">
+                                    <button class="theme-btn active" data-theme="light">Light</button>
+                                    <button class="theme-btn" data-theme="dark">Dark</button>
+                                    <button class="theme-btn" data-theme="system">System</button>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <span class="setting-label">Language</span>
+                                <select class="setting-select">
+                                    <option>English</option>
+                                    <option>中文</option>
+                                    <option>日本語</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3>Gateway</h3>
+                            <div class="setting-item">
+                                <span class="setting-label">Status</span>
+                                <span class="setting-value status-online">Running</span>
+                            </div>
+                            <div class="setting-item">
+                                <span class="setting-label">Port</span>
+                                <span class="setting-value">3000</span>
+                            </div>
+                            <div class="setting-actions">
+                                <button class="secondary-btn">Restart</button>
+                                <button class="secondary-btn">View Logs</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3>🔑 BYOK - Bring Your Own Key</h3>
+                            <p class="setting-desc">Your API keys are stored locally and never sent to our servers.</p>
+                            <div class="api-keys-list" id="apiKeysList">
+                                <div class="api-key-item">
+                                    <span class="provider-icon">🔵</span>
+                                    <input type="text" placeholder="sk-..." class="api-key-input" id="openaiKey">
+                                    <span class="provider-name">OpenAI</span>
+                                </div>
+                                <div class="api-key-item">
+                                    <span class="provider-icon">🟣</span>
+                                    <input type="text" placeholder="sk-ant-..." class="api-key-input" id="anthropicKey">
+                                    <span class="provider-name">Anthropic</span>
+                                </div>
+                                <div class="api-key-item">
+                                    <span class="provider-icon">🟠</span>
+                                    <input type="text" placeholder="http://localhost:11434" class="api-key-input" id="ollamaUrl">
+                                    <span class="provider-name">Ollama URL</span>
+                                </div>
+                                <div class="api-key-item">
+                                    <span class="provider-icon">🟡</span>
+                                    <input type="text" placeholder="sk-..." class="api-key-input" id="deepseekKey">
+                                    <span class="provider-name">DeepSeek</span>
+                                </div>
+                            </div>
+                            <button class="primary-btn" onclick="saveApiKeys()" style="margin-top: 12px;">
+                                💾 Save Keys
+                            </button>
+                            <p class="setting-desc" style="margin-top: 8px; font-size: 12px;">
+                                ✓ Keys stored in browser localStorage<br>
+                                ✓ Never sent to external servers<br>
+                                ✓ Used locally for AI requests
+                            </p>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3>Security</h3>
+                            <div class="setting-item">
+                                <span class="setting-label">Internal API Key</span>
+                                <span class="setting-value">••••••••••••</span>
+                                <button class="text-btn" onclick="toggleInternalKey()">Reveal</button>
+                            </div>
+                            <div class="setting-item">
+                                <span class="setting-label">Rate Limiting</span>
+                                <span class="setting-value">100 req/min</span>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3>Data</h3>
+                            <div class="setting-item">
+                                <span class="setting-label">Sessions Stored</span>
+                                <span class="setting-value">156</span>
+                            </div>
+                            <div class="setting-item">
+                                <span class="setting-label">Workflow Runs</span>
+                                <span class="setting-value">1,247</span>
+                            </div>
+                            <div class="setting-actions">
+                                <button class="danger-btn">Clear All Data</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

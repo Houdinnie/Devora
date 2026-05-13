@@ -1,0 +1,53 @@
+name: Data Analysis Pipeline
+description: Analyze datasets and generate insights with ML recommendations
+category: data-science
+
+inputs:
+  - name: data_source
+    required: true
+    description: "URL or path to dataset"
+  - name: analysis_type
+    required: false
+    default: "exploratory"
+    description: "exploratory, predictive, or classification"
+  - name: target_column
+    required: false
+    description: "Target variable for prediction tasks"
+
+llm:
+  provider: ollama
+  model: qwen2.5-coder:14b
+
+steps:
+  - id: load_data
+    agent: backend-architect
+    task: "Load and explore the dataset from {{data_source}}. Identify: 1) Data types and schema, 2) Number of rows and columns, 3) Missing values, 4) Basic statistics, 5) Potential quality issues. Output a data summary."
+    output_var: data_summary
+
+  - id: clean_data
+    agent: database-optimizer
+    task: "Clean the data from {{data_summary}}. Handle: 1) Missing values, 2) Duplicate records, 3) Outliers, 4) Data type conversions, 5) Feature engineering suggestions. Provide cleaned dataset summary."
+    depends_on:
+      - load_data
+    output_var: cleaned_data
+
+  - id: analyze
+    agent: algorithms-engineer
+    task: "Perform {{analysis_type}} analysis on {{cleaned_data}}. For exploratory: correlation analysis, distributions, key patterns. For predictive: feature importance, baseline model, recommendations. Target: {{target_column}}."
+    depends_on:
+      - clean_data
+    output_var: analysis_results
+
+  - id: visualize
+    agent: ui-designer
+    task: "Based on the analysis {{analysis_results}}, create recommendations for data visualizations: 1) Best chart types for each insight, 2) Dashboard layout suggestions, 3) Color schemes for accessibility."
+    depends_on:
+      - analyze
+    output_var: viz_recommendations
+
+  - id: ml_recommend
+    agent: ml-engineer
+    task: "Based on analysis {{analysis_results}}, recommend ML approaches: 1) Suitable algorithms, 2) Expected performance metrics, 3) Data requirements for production, 4) Implementation roadmap."
+    depends_on:
+      - analyze
+    output_var: ml_recommendations

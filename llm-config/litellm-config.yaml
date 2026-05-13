@@ -1,0 +1,50 @@
+# LiteLLM Configuration for Autonomous AI Agency
+
+model_list:
+  # Primary: Qwen Coder (CPU-optimized, 14B)
+  - model_name: qwen-coder-14b
+    litellm_params:
+      model: openai/qwen2.5-coder:14b
+      api_base: http://ollama:11434/v1
+      api_key: "no-key"
+      rpm: 10
+      max_retries: 3
+      timeout: 300
+
+  # Fallback: Phi4 (lightweight, fast)
+  - model_name: phi4-mini
+    litellm_params:
+      model: openai/phi4
+      api_base: http://ollama:11434/v1
+      api_key: "no-key"
+      rpm: 20
+      max_retries: 2
+      timeout: 120
+
+  # OpenRouter fallback (complex reasoning)
+  - model_name: claude-haiku
+    litellm_params:
+      model: openrouter/anthropic/claude-3-haiku-20240307
+      api_key: os.environ/OPENROUTER_API_KEY
+      rpm: 60
+      max_retries: 3
+
+  # HuggingFace (ML tasks, free tier)
+  - model_name: hf-llama-8b
+    litellm_params:
+      model: huggingface/meta-llama/Llama-3.1-8B-Instruct
+      api_key: os.environ/HF_TOKEN
+      rpm: 30
+
+router_settings:
+  routing_strategy: latency-based-routing
+  redis_host: redis
+  redis_port: 6379
+  cache_params:
+    type: redis
+    enabled: true
+    ttl: 3600
+  allowed_fails: 3
+  cooldown_time: 30
+  num_retries: 3
+  request_timeout: 300

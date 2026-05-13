@@ -1,0 +1,55 @@
+name: Feature Development Pipeline
+description: End-to-end feature development with multi-role collaboration
+category: development
+
+inputs:
+  - name: feature_description
+    required: true
+  - name: priority
+    required: false
+    default: "medium"
+
+llm:
+  provider: ollama
+  model: qwen2.5-coder:14b
+
+steps:
+  - id: requirements
+    role: product/product-manager
+    task: "Create detailed requirements for: {{feature_description}}. Include: 1) User stories, 2) Acceptance criteria, 3) Success metrics, 4) Technical notes."
+    output: reqs
+
+  - id: design
+    role: design/ui-designer
+    task: "Design UI/UX for: {{reqs}}. Include: 1) Wireframes description, 2) Component structure, 3) Interaction flows, 4) Accessibility notes."
+    output: design_spec
+
+  - id: backend_dev
+    role: engineering/backend-architect
+    task: "Implement backend for: {{reqs}} with design: {{design_spec}}. Include: 1) API endpoints, 2) Database changes, 3) Business logic."
+    output: backend_code
+
+  - id: frontend_dev
+    role: engineering/frontend-developer
+    task: "Implement frontend for: {{design_spec}} with backend: {{backend_code}}. Include: 1) Components, 2) State management, 3) API integration."
+    output: frontend_code
+
+  - id: tests
+    role: testing/tester
+    task: "Create test plan for: {{feature_description}}. Based on: Requirements {{reqs}}, Backend {{backend_code}}, Frontend {{frontend_code}}. Include: 1) Test cases, 2) Coverage targets."
+    output: test_plan
+
+  - id: security_review
+    role: engineering/security-engineer
+    task: "Security review for: {{backend_code}} and {{frontend_code}}. Check: 1) Auth, 2) Input validation, 3) Data protection, 4) Dependencies."
+    output: security_findings
+
+  - id: final_review
+    role: engineering/code-reviewer
+    task: "Final code review: Backend {{backend_code}}, Frontend {{frontend_code}}, Tests {{test_plan}}, Security {{security_findings}}. Provide approval decision."
+    depends_on:
+      - backend_dev
+      - frontend_dev
+      - tests
+      - security_review
+    output: final_approval

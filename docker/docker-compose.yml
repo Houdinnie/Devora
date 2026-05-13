@@ -1,0 +1,108 @@
+# Autonomous AI Agency - Docker Compose
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ai-agency-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgres://agency:agency123@postgres:5432/agency
+      - DATABASE_URL_SYNC=postgres://agency:agency123@postgres:5432/agency?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_HOST=ollama:11434
+      - API_KEY=${API_KEY:-agency-dev-key-change-in-production}
+      - LITELLM_MASTER_KEY=sk-litellm-local
+      - HF_TOKEN=${HF_TOKEN:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+    volumes:
+      - ../agents:/app/agents:ro
+      - ../workflows:/app/workflows:ro
+      - ../skills:/app/skills:ro
+      - ../llm-config:/app/llm-config:ro
+      - agent-output:/app/output
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ai-agency-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=2
+    command: >
+      sh -c "ollama pull qwen2.5-coder:14b && ollama pull phi4 && ollama serve"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ai-agency-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: ai-agency-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=agency
+      - POSTGRES_PASSWORD=agency123
+      - POSTGRES_DB=agency
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agency -d agency"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  ollama-data:
+  redis-data:
+  postgres-data:
+  agent-output:
+
+networks:
+  default:
+    name: ai-agency-network

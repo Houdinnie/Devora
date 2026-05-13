@@ -1,0 +1,51 @@
+name: Startup Launch
+description: Launch a new startup with multi-agent collaboration
+category: strategy
+
+inputs:
+  - name: startup_idea
+    required: true
+  - name: target_market
+    required: false
+    default: "B2B SaaS"
+
+llm:
+  provider: ollama
+  model: qwen2.5-coder:14b
+
+steps:
+  - id: market_research
+    role: marketing/growth-hacker
+    task: "Research the {{target_market}} market for: {{startup_idea}}. Identify: 1) Market size, 2) Key players, 3) Trends, 4) Opportunities. Output as analysis."
+    output: market_analysis
+
+  - id: product_plan
+    role: product/product-manager
+    task: "Create a product roadmap for: {{startup_idea}}. Based on market research: {{market_analysis}}. Include: 1) MVP features, 2) Timeline, 3) Success metrics."
+    output: product_plan
+
+  - id: technical_design
+    role: engineering/software-architect
+    task: "Design technical architecture for: {{product_plan}}. Include: 1) Tech stack, 2) Data model, 3) API design, 4) Infrastructure."
+    output: tech_design
+
+  - id: go_to_market
+    role: marketing/growth-hacker
+    task: "Design GTM strategy for: {{startup_idea}}. Include: 1) Channels, 2) Messaging, 3) Acquisition plan, 4) Metrics."
+    output: gtm_strategy
+
+  - id: financial_projections
+    role: sales/deal-strategist
+    task: "Create financial projections for: {{startup_idea}}. Include: 1) Pricing model, 2) Cost structure, 3) 12-month forecast, 4) Break-even analysis."
+    output: financials
+
+  - id: final_report
+    role: product/product-manager
+    task: "Combine all analysis into a startup launch plan: Market: {{market_analysis}}, Product: {{product_plan}}, Tech: {{tech_design}}, GTM: {{gtm_strategy}}, Finance: {{financials}}. Output as comprehensive report."
+    depends_on:
+      - market_research
+      - product_plan
+      - technical_design
+      - go_to_market
+      - financial_projections
+    output: launch_plan

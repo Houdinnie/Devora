@@ -1,0 +1,59 @@
+name: Fullstack App Generator
+description: Generate a complete fullstack application with frontend, backend, and database
+category: development
+
+inputs:
+  - name: app_name
+    required: true
+  - name: description
+    required: true
+  - name: features
+    required: false
+    default: "CRUD operations, authentication"
+  - name: frontend_stack
+    required: false
+    default: "react"
+  - name: backend_stack
+    required: false
+    default: "node"
+
+llm:
+  provider: ollama
+  model: qwen2.5-coder:14b
+
+steps:
+  - id: design
+    agent: backend-architect
+    task: "Design a fullstack application called '{{app_name}}'. Description: {{description}}. Features: {{features}}. Create a technical specification with: 1) API endpoints design, 2) Database schema, 3) Component hierarchy. Output a JSON specification."
+    output_var: design_spec
+
+  - id: backend
+    agent: backend-architect
+    task: "Based on this design spec: {{design_spec}}, generate the backend code. Include: 1) Express/Node.js server setup, 2) Database models, 3) API routes with proper error handling. Use {{backend_stack}} stack."
+    depends_on:
+      - design
+    output_var: backend_code
+
+  - id: frontend
+    agent: frontend-developer
+    task: "Based on this design spec: {{design_spec}} and backend: {{backend_code}}, create a {{frontend_stack}} frontend. Include: 1) Clean component structure, 2) API integration, 3) State management, 4) Basic styling."
+    depends_on:
+      - design
+      - backend
+    output_var: frontend_code
+
+  - id: tests
+    agent: qa-expert
+    task: "Create test files for the generated application. 1) Backend: Unit tests for API routes, 2) Frontend: Component tests with React Testing Library. Reference the code: Backend {{backend_code}}, Frontend {{frontend_code}}."
+    depends_on:
+      - backend
+      - frontend
+    output_var: test_code
+
+  - id: setup
+    agent: devops-engineer
+    task: "Create deployment files for this fullstack app. Include: 1) Dockerfiles for frontend and backend, 2) docker-compose.yml for local dev, 3) GitHub Actions workflow for CI/CD."
+    depends_on:
+      - backend
+      - frontend
+    output_var: deployment_config

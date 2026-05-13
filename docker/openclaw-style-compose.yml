@@ -1,0 +1,77 @@
+# Devora Docker Configuration
+# Follows OpenClaw best practices for security
+
+version: '3.8'
+
+services:
+  devora:
+    image: devora:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18789:18789"   # CRITICAL: Never bind to 0.0.0.0
+    volumes:
+      - ./data:/data
+      - ./skills:/skills
+      - ./memory:/memory
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENCLAW_MEMORY_DIR=/data/memory
+      - OPENCLAW_LOG_LEVEL=warn
+      - NODE_ENV=production
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18789/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - devora-network
+
+  # Redis for task queue
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - devora-network
+
+  # PostgreSQL for data storage
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=devora
+      - POSTGRES_USER=devora
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - devora-network
+
+networks:
+  devora-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:
+
+# Security notes:
+# 1. Bind to 127.0.0.1, never 0.0.0.0
+# 2. Run as non-root user (1000:1000)
+# 3. Enable read-only mode where possible
+# 4. Use tmpfs for temporary data
+# 5. Add security options to prevent privilege escalation
+# 6. Use healthcheck for monitoring
+# 7. Always use reverse proxy (Nginx) for external access

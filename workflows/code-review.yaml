@@ -1,0 +1,44 @@
+name: Code Review Pipeline
+description: Automated code review workflow that checks quality, security, and best practices
+category: development
+
+inputs:
+  - name: repo_url
+    required: true
+  - name: branch
+    required: false
+    default: main
+  - name: pr_description
+    required: false
+
+llm:
+  provider: ollama
+  model: qwen2.5-coder:14b
+
+steps:
+  - id: clone
+    agent: devops-engineer
+    task: "Clone the repository at {{repo_url}} and check out branch {{branch}}. List the main source files and directories."
+    output_var: clone_output
+
+  - id: security_scan
+    agent: backend-architect
+    task: "Analyze the codebase for security vulnerabilities. Check for: 1) SQL injection risks, 2) XSS vulnerabilities, 3) Authentication issues, 4) Hardcoded secrets. Report any findings."
+    depends_on:
+      - clone
+    output_var: security_results
+
+  - id: code_quality
+    agent: frontend-developer
+    task: "Review the code quality. Check for: 1) Code consistency, 2) Proper error handling, 3) Type safety (if TypeScript), 4) Component organization, 5) Testing coverage. Provide suggestions."
+    depends_on:
+      - clone
+    output_var: quality_results
+
+  - id: review_summary
+    agent: incident-commander
+    task: "You have gathered the following analysis: Security findings: {{security_results}}. Code quality: {{quality_results}}. Create a summary of the review with a verdict: APPROVED, CHANGES_REQUESTED, or BLOCKED. Include action items."
+    depends_on:
+      - security_scan
+      - code_quality
+    output_var: review_summary
