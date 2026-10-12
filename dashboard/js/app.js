@@ -63,6 +63,7 @@ function disconnectDashboard() {
     document.getElementById('connectionKey').value = '';
     document.getElementById('connectionStatus').textContent = 'Disconnected. Enter your local API key to load catalogs.';
     document.getElementById('apiKeyState').textContent = 'Not connected';
+    for (const id of ['apiStatusText', 'gatewayText']) document.getElementById(id).textContent = 'API not connected';
     document.getElementById('chatStatus').textContent = 'Connect the API above. No model has run.';
     for (const selector of ['.agents-grid', '.skills-grid', '.workflows-grid', '.channels-grid']) {
         document.querySelector(selector).innerHTML = '<p>Connect the API to load live data.</p>';
