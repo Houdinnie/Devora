@@ -85,7 +85,7 @@ app.get('/api', async (_req: Request, res: Response) => {
     agentsLoaded: agents.length,
     endpoints: {
       compose: 'POST /api/compose',
-      workflow: { list: 'GET /api/workflow', run: 'POST /api/workflow/run', get: 'GET /api/workflow/:name', runStatus: 'GET /api/workflow/runs/:runId', cancel: 'POST /api/workflow/runs/:runId/cancel' },
+      workflow: { list: 'GET /api/workflow', run: 'POST /api/workflow/run', get: 'GET /api/workflow/:name', runStatus: 'GET /api/workflow/runs/:runId', cancel: 'POST /api/workflow/runs/:runId/cancel', cleanupWorktrees: 'DELETE /api/workflow/runs/:runId/worktrees' },
       agent: { list: 'GET /api/agent', get: 'GET /api/agent/:id', execute: 'POST /api/agent/:id/execute' },
       session: { list: 'GET /api/sessions', create: 'POST /api/sessions', get: 'GET /api/session/:id', history: 'GET /api/session/:id/history' },
     },
