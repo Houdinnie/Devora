@@ -5,6 +5,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+import { resolve } from 'node:path';
+import { localDevelopmentEnabled, validateLocalDevelopment } from './local-development.js';
 
 import { authMiddleware, registerApiKey } from './middleware/authMiddleware.js';
 import { rateLimitMiddleware } from './middleware/authMiddleware.js';
@@ -24,6 +26,8 @@ import swarmRoute from './routes/swarm.js';
 import securityAuditRoute from './routes/security-audit.js';
 import staticAnalysisRoute from './routes/static-analysis.js';
 
+validateLocalDevelopment();
+const localDev = localDevelopmentEnabled();
 const PORT = Number.parseInt(process.env.PORT || '3000', 10);
 const configuredApiKey = process.env.API_KEY?.trim();
 
@@ -44,14 +48,15 @@ app.disable('x-powered-by');
 app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
 
 app.use(helmet());
-app.use(cors({
-  origin(origin, callback) {
-    // Non-browser clients omit Origin. Browser origins must be explicitly listed.
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('Origin not allowed by CORS'));
-  },
-  credentials: true,
+app.use(cors((req, callback) => {
+  const origin = req.headers.origin;
+  const sameOrigin = origin === `${req.protocol}://${req.get('host')}`;
+  callback(null, { origin: !origin || sameOrigin || allowedOrigins.includes(origin), credentials: false });
 }));
+
+// Serve only dashboard assets, never the repository root or environment files.
+app.use('/dashboard', express.static(resolve('dashboard')));
+app.get('/', (_req, res) => res.redirect('/dashboard/'));
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
@@ -111,9 +116,10 @@ if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
   console.warn('CORS_ORIGIN is empty: browser-origin requests are denied until an allowlist is configured.');
 }
 
-app.listen(PORT, '0.0.0.0', async () => {
+app.listen(PORT, localDev ? '127.0.0.1' : '0.0.0.0', async () => {
   try {
     const agents = await listAgents();
+    if (localDev) console.log('Local development: loopback only; in-memory rate limits, not Redis.');
     console.log(`🎼 Devora API listening on port ${PORT}; agents loaded: ${agents.length}`);
   } catch (error) {
     console.error('API started but agent registry initialization failed:', error);
