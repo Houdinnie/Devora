@@ -141,10 +141,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS session_last_activity
-    BEFORE UPDATE ON sessions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_last_activity();
+DO $ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'session_last_activity') THEN
+        CREATE TRIGGER session_last_activity
+            BEFORE UPDATE ON sessions
+            FOR EACH ROW EXECUTE FUNCTION update_last_activity();
+    END IF;
+END $;
 
 -- Function to update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -155,15 +158,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS workflow_runs_updated
-    BEFORE UPDATE ON workflow_runs
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
+DO $ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'workflow_runs_updated') THEN
+        CREATE TRIGGER workflow_runs_updated
+            BEFORE UPDATE ON workflow_runs
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+    END IF;
+END $;
 
-CREATE TRIGGER IF NOT EXISTS workflow_templates_updated
-    BEFORE UPDATE ON workflow_templates
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
+DO $ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'workflow_templates_updated') THEN
+        CREATE TRIGGER workflow_templates_updated
+            BEFORE UPDATE ON workflow_templates
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+    END IF;
+END $;
 
 -- Channels table
 CREATE TABLE IF NOT EXISTS channels (
