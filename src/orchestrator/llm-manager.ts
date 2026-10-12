@@ -61,7 +61,7 @@ export class OllamaProvider implements LLMProvider {
     const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(config?.timeout_ms ?? 120000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(config?.timeout_ms ?? 120000)]) : AbortSignal.timeout(config?.timeout_ms ?? 120000),
       body: JSON.stringify({
         model, prompt, stream: true,
         options: { temperature: config?.temperature ?? 0.7, num_predict: config?.max_tokens ?? 4096 },
@@ -120,12 +120,12 @@ export class LLMManager {
     yield* stream.call(this.primaryProvider, prompt, config, signal);
   }
 
-  private async completeWithOpenRouter(prompt: string, config?: Partial<LLMConfig>): Promise<LLMResponse> {
+  private async completeWithOpenRouter(prompt: string, config?: Partial<LLMConfig>, signal?: AbortSignal): Promise<LLMResponse> {
     const model = config?.model || 'anthropic/claude-3-haiku-20240307';
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` },
-      signal: AbortSignal.timeout(config?.timeout_ms ?? 120000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(config?.timeout_ms ?? 120000)]) : AbortSignal.timeout(config?.timeout_ms ?? 120000),
       body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: config?.temperature ?? 0.7, max_tokens: config?.max_tokens ?? 4096 }),
     });
     const data = await response.json() as any;
@@ -133,12 +133,12 @@ export class LLMManager {
     return { content: data.choices?.[0]?.message?.content || '', model: data.model || model, usage: data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }, finish_reason: data.choices?.[0]?.finish_reason || 'stop' };
   }
 
-  private async completeWithHuggingFace(prompt: string, config?: Partial<LLMConfig>): Promise<LLMResponse> {
+  private async completeWithHuggingFace(prompt: string, config?: Partial<LLMConfig>, signal?: AbortSignal): Promise<LLMResponse> {
     const model = config?.model?.replace(/^hf-/, '') || 'meta-llama/Llama-3.1-8B-Instruct';
     const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.HF_TOKEN}` },
-      signal: AbortSignal.timeout(config?.timeout_ms ?? 120000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(config?.timeout_ms ?? 120000)]) : AbortSignal.timeout(config?.timeout_ms ?? 120000),
       body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: config?.temperature ?? 0.7, max_tokens: config?.max_tokens ?? 4096 }),
     });
     const data = await response.json() as any;
