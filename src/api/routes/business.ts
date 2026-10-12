@@ -3,7 +3,8 @@ import { Router, Request, Response } from 'express';
 const router = Router();
 
 // In-memory business data (would use database in production)
-const businessData = {
+type BusinessRecord = { id: string; [key: string]: any };
+const businessData: Record<string, BusinessRecord[]> = {
     leads: [],
     deals: [],
     contacts: [],
