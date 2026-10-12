@@ -64,7 +64,7 @@ router.post('/run', async (req: Request, res: Response) => {
       });
     }
     
-    const runResult = await db.query(
+    const runResult = await db.query<{ id: string }>(
       `INSERT INTO workflow_runs (session_id, workflow_name, status, inputs)
        VALUES ($1, $2, 'running', $3)
        RETURNING *`,
@@ -81,18 +81,13 @@ router.post('/run', async (req: Request, res: Response) => {
       try {
         const result = await executeWorkflow(workflowName, inputs || {}, {
           sessionId: session.id,
-          stream: sse,
-          onAgentStart: (agentId, step) => {
-            sse.agentStart(agentId, step);
-          },
-          onAgentComplete: (agentId, output) => {
-            sse.agentComplete(agentId, output);
-          },
-          onAgentFailed: (agentId, error) => {
-            sse.agentFailed(agentId, error);
-          },
-          onProgress: (current, total) => {
-            sse.workflowProgress(current, total);
+          inputs: inputs || {},
+          outputs: {},
+          stream: {
+            onAgentStart: (agentId, step) => { sse.agentStart(agentId, step); },
+            onAgentComplete: (agentId, output) => { sse.agentComplete(agentId, output); },
+            onAgentFailed: (agentId, error) => { sse.agentFailed(agentId, error); },
+            onProgress: (current, total) => { sse.workflowProgress(current, total); },
           },
         });
         
@@ -126,6 +121,8 @@ router.post('/run', async (req: Request, res: Response) => {
     }
     
     const result = await executeWorkflow(workflowName, inputs || {}, {
+      inputs: inputs || {},
+      outputs: {},
       sessionId: session.id,
     });
     
