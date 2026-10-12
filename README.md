@@ -197,3 +197,7 @@ dashboard/           Static HTML, CSS, and JavaScript frontend
 tests/               Authentication, scheduler, and worktree tests
 docker/              Dockerfile and Compose configuration
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE). Copyright (c) 2026 Ryan Panashe Murangariri.
