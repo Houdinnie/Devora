@@ -1,6 +1,8 @@
 -- Durable workflow cancellation and per-step checkpoints.
 ALTER TABLE workflow_runs
-  ADD COLUMN IF NOT EXISTS cancel_requested_at TIMESTAMPTZ;
+  ADD COLUMN IF NOT EXISTS cancel_requested_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS repository_path TEXT,
+  ADD COLUMN IF NOT EXISTS base_ref TEXT;
 
 CREATE TABLE IF NOT EXISTS workflow_run_steps (
   workflow_run_id UUID NOT NULL REFERENCES workflow_runs(id) ON DELETE CASCADE,
