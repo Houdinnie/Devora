@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, devora-v2-security-baseline]
+    branches: [main, devora-v2-security-baseline, devora-v2-orchestration, devora-v2-workspace-final]
   pull_request:
     branches: [main]
   workflow_dispatch:

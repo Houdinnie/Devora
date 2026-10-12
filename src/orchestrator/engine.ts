@@ -3,6 +3,7 @@ import { listAgents, getAgentContent } from './agent-registry.js';
 import { loadWorkflow, WorkflowContext, WorkflowStep } from './workflow.js';
 import { SSEStream } from '../streaming/sse.js';
 import { createIsolatedWorktree } from './worktree-manager.js';
+import { applyWorkspaceChanges, buildWorkspaceContext } from './workspace-worker.js';
 
 export interface AgentExecutionResult {
   success: boolean; output: string; duration: number;
@@ -110,6 +111,8 @@ export async function executeWorkflow(
     let finalResult: AgentExecutionResult | undefined;
     let attemptsMade = 0;
     let worktreePath: string | undefined;
+    let workspaceFiles: Array<{ path: string; content: string }> = [];
+    let workspaceContextTruncated = false;
     try {
       if (options?.repositoryPath) {
         if (!options.runId) throw new Error('runId is required when repositoryPath is provided');
@@ -119,6 +122,9 @@ export async function executeWorkflow(
           options.baseRef || 'HEAD'
         );
         worktreePath = worktree.worktreePath;
+        const workspaceContext = await buildWorkspaceContext(worktreePath);
+        workspaceFiles = workspaceContext.files;
+        workspaceContextTruncated = workspaceContext.truncated;
       }
       const variables = { ...inputs, ...outputs, ...Object.fromEntries(stepOutput) };
       const task = replaceVariables(step.task, variables);
@@ -128,8 +134,10 @@ export async function executeWorkflow(
         stepId: step.id, workflowName, runId: options?.runId,
         repositoryPath: options?.repositoryPath, baseRef: options?.baseRef || 'HEAD',
         worktreePath,
+        workspaceFiles: worktreePath ? workspaceFiles : undefined,
+        workspaceContextTruncated,
         instructions: worktreePath
-          ? 'This step has an isolated local Git worktree. Use worktreePath as the only workspace for this step; do not modify repositoryPath directly. Return a concise summary of changes made or exact files/patches required.'
+          ? 'Make the requested code changes using the supplied workspaceFiles. Return ONLY valid JSON: {"summary":"what changed","files":[{"path":"relative/path/from/repository-root","content":"complete new file content"}]}. Include complete contents for every file to create or update. Do not return diffs, markdown fences, shell commands, absolute paths, or edits to secrets, .git, or node_modules. Use only the provided files as context; if necessary information is missing, return an empty files array and explain what is missing in summary.'
           : undefined,
       };
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -144,10 +152,19 @@ export async function executeWorkflow(
           const timeout = new Promise<never>((_, reject) => {
             timeoutHandle = setTimeout(() => { attemptController.abort(); reject(new Error(`Step timed out after ${timeoutMs}ms`)); }, timeoutMs);
           });
-          finalResult = await Promise.race([
+          const agentResult = await Promise.race([
             executeAgent(step.agent, task, { sessionId: options?.sessionId, signal: attemptController.signal, timeoutMs, context }),
             timeout,
           ]);
+          if (agentResult.success && worktreePath) {
+            const applied = await applyWorkspaceChanges(worktreePath, agentResult.output);
+            finalResult = {
+              ...agentResult,
+              output: JSON.stringify({ summary: applied.summary, changedFiles: applied.changedFiles, worktreePath }),
+            };
+          } else {
+            finalResult = agentResult;
+          }
         } catch (error) {
           finalResult = { success: false, output: '', duration: 0, error: error instanceof Error ? error.message : 'Step failed' };
         } finally {
