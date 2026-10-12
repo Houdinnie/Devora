@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { basename, join, resolve } from 'path';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { executeWorkflow, StepCheckpoint } from '../../orchestrator/engine.js';
+import { removeIsolatedWorktree } from '../../orchestrator/worktree-manager.js';
 import { listAvailableWorkflows, loadWorkflow } from '../../orchestrator/workflow.js';
 import { sessionStore } from '../../memory/session.js';
 import { createSSEStream } from '../../streaming/sse.js';
@@ -76,6 +77,41 @@ router.post('/runs/:runId/cancel', async (req: Request, res: Response) => {
   }
 });
 
+router.delete('/runs/:runId/worktrees', async (req: Request, res: Response) => {
+  const runId = req.params.runId;
+  if (!/^[0-9a-f-]{36}$/i.test(runId)) { res.status(400).json({ error: 'Invalid run id' }); return; }
+  try {
+    const run = await db.query<{ repository_path: string | null }>(
+      'SELECT repository_path FROM workflow_runs WHERE id = $1', [runId]
+    );
+    const repositoryPath = run.rows[0]?.repository_path;
+    if (!repositoryPath) { res.status(409).json({ error: 'This run has no recorded repository worktree' }); return; }
+    const checkpoints = await db.query<{ worktree_path: string | null }>(
+      'SELECT worktree_path FROM workflow_run_steps WHERE workflow_run_id = $1 AND worktree_path IS NOT NULL', [runId]
+    );
+    const configuredRoot = process.env.DEVORA_WORKTREE_DIR || resolve(process.env.DEVORA_REPOSITORIES_DIR || '.', '.devora-worktrees');
+    const removed: string[] = [];
+    const errors: string[] = [];
+    for (const row of checkpoints.rows) {
+      if (!row.worktree_path) continue;
+      const worktreeId = basename(row.worktree_path);
+      if (resolve(configuredRoot, worktreeId) !== resolve(row.worktree_path)) {
+        errors.push('Skipped a worktree path that did not match the configured worktree root');
+        continue;
+      }
+      try {
+        await removeIsolatedWorktree(repositoryPath, worktreeId);
+        removed.push(worktreeId);
+      } catch (error) {
+        errors.push(`${worktreeId}: ${error instanceof Error ? error.message : 'cleanup failed'}`);
+      }
+    }
+    res.json({ success: errors.length === 0, runId, removed, errors });
+  } catch {
+    res.status(500).json({ error: 'Failed to clean workflow worktrees' });
+  }
+});
+
 router.get('/runs/:runId', async (req: Request, res: Response) => {
   const runId = req.params.runId;
   if (!/^[0-9a-f-]{36}$/i.test(runId)) { res.status(400).json({ error: 'Invalid run id' }); return; }
@@ -122,9 +158,9 @@ router.post('/run', async (req: Request, res: Response) => {
     let session = sessionId ? await sessionStore.get(sessionId) : null;
     if (!session) session = await sessionStore.create({ name: `Workflow: ${workflowName}`, metadata: { workflow: workflowName } });
     const runResult = await db.query<{ id: string }>(
-      `INSERT INTO workflow_runs (session_id, workflow_name, status, inputs, started_at)
-       VALUES ($1, $2, 'running', $3, NOW()) RETURNING id`,
-      [session.id, workflowName, JSON.stringify(inputs || {})]
+      `INSERT INTO workflow_runs (session_id, workflow_name, status, inputs, started_at, repository_path, base_ref)
+       VALUES ($1, $2, 'running', $3, NOW(), $4, $5) RETURNING id`,
+      [session.id, workflowName, JSON.stringify(inputs || {}), repositoryPath || null, baseRef || 'HEAD']
     );
     if (!runResult.rows[0]?.id) throw new Error('Could not create workflow run; check DATABASE_URL and database schema');
     runId = runResult.rows[0].id;
