@@ -24,8 +24,8 @@ router.get('/stats', async (req: Request, res: Response) => {
     const agents = agentsFiles.filter(f => f.endsWith('.md')).length;
     const skills = skillsFiles.filter(f => f.endsWith('.md')).length;
     const workflows = workflowsFiles.filter(f => f.endsWith('.yaml') || f.endsWith('.yml')).length;
-    const sessions = parseInt(sessionResult.rows[0]?.count || '0');
-    const channels = parseInt(channelResult.rows[0]?.count || '0');
+    const sessions = Number(sessionResult.rows[0]?.count || 0);
+    const channels = Number(channelResult.rows[0]?.count || 0);
     
     res.json({
       agents: { count: agents, path: agentsDir },
