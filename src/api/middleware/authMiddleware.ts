@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { hashApiKey, validateRequestAuth } from './auth.js';
 import { rateLimit } from '../../memory/cache.js';
+import { createMemoryLimiter, localDevelopmentEnabled } from '../local-development.js';
 import { db } from '../../db/client.js';
 
 declare global {
@@ -74,12 +75,16 @@ export function optionalAuthMiddleware(req: Request, _res: Response, next: NextF
   next();
 }
 
+const memoryRateLimit = createMemoryLimiter();
+
 export function rateLimitMiddleware(maxRequests = 100, windowSeconds = 60) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const userId = req.auth?.userId || req.ip || 'anonymous';
     const key = `ratelimit:${userId}:${req.path}`;
     try {
-      const result = await rateLimit(key, maxRequests, windowSeconds);
+      const result = localDevelopmentEnabled()
+        ? memoryRateLimit(key, maxRequests, windowSeconds)
+        : await rateLimit(key, maxRequests, windowSeconds);
       res.setHeader('X-RateLimit-Limit', String(maxRequests));
       res.setHeader('X-RateLimit-Remaining', String(result.remaining));
       res.setHeader('X-RateLimit-Reset', new Date(result.resetAt).toISOString());
