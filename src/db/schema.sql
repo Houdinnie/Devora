@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS workflow_runs (
     error_message TEXT DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    completed_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
+    completed_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    cancel_requested_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_session ON workflow_runs(session_id);
@@ -187,3 +188,20 @@ CREATE TABLE IF NOT EXISTS channels (
 
 CREATE INDEX IF NOT EXISTS idx_channels_type ON channels(type);
 CREATE INDEX IF NOT EXISTS idx_channels_status ON channels(status);
+
+-- Durable per-step workflow checkpoints and worktree metadata
+CREATE TABLE IF NOT EXISTS workflow_run_steps (
+    workflow_run_id UUID NOT NULL REFERENCES workflow_runs(id) ON DELETE CASCADE,
+    step_id VARCHAR(255) NOT NULL,
+    agent_id VARCHAR(255) NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'pending',
+    attempt INTEGER NOT NULL DEFAULT 0,
+    output_text TEXT,
+    error_message TEXT,
+    worktree_path TEXT,
+    started_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE,
+    PRIMARY KEY (workflow_run_id, step_id)
+);
+CREATE INDEX IF NOT EXISTS idx_workflow_run_steps_status ON workflow_run_steps(workflow_run_id, status);
