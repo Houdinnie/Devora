@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { localDevelopmentEnabled } from '../local-development.js';
 import { db } from '../../db/client.js';
 import { redisHealthCheck } from '../../memory/cache.js';
 import { llmManager } from '../../orchestrator/llm-manager.js';
@@ -24,7 +25,7 @@ export async function healthCheckHandler(
 ): Promise<void> {
   const [dbHealthy, redisHealthy, ollamaHealthy] = await Promise.all([
     db.healthCheck().catch(() => false),
-    redisHealthCheck().catch(() => false),
+    localDevelopmentEnabled() ? Promise.resolve(false) : redisHealthCheck().catch(() => false),
     llmManager.checkHealth().catch(() => false),
   ]);
 
