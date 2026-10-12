@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -60,12 +60,12 @@
         <!-- macOS-style Title Bar -->
         <header class="title-bar">
             <div class="traffic-lights">
-                <button class="traffic-light close" onclick="handleClose()"></button>
-                <button class="traffic-light minimize" onclick="handleMinimize()"></button>
-                <button class="traffic-light maximize" onclick="handleMaximize()"></button>
+                <button class="traffic-light close" disabled title="Not wired to the API"></button>
+                <button class="traffic-light minimize" disabled title="Not wired to the API"></button>
+                <button class="traffic-light maximize" disabled title="Not wired to the API"></button>
             </div>
             <div class="title-bar-content">
-                <span class="app-icon"><svg class="ic" aria-hidden="true"><use href="#i-logo"/></svg></span>
+                <span class="app-icon"><svg class="ic" aria-hidden="true"><use href="#i-logo"></use></svg></span>
                 <span class="app-title">Devora</span>
                 <span class="chat-count" id="chatCount">0 chats</span>
             </div>
@@ -88,39 +88,39 @@
                 <div class="nav-sections">
                     <div class="nav-section">
                         <div class="nav-item active" data-section="chat">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-message"></use></svg></span>
                             <span class="nav-label">Chat</span>
                         </div>
                         <div class="nav-item" data-section="agents">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-users"></use></svg></span>
                             <span class="nav-label">Agents</span>
                             <span class="nav-badge" id="agentsBadge">-</span>
                         </div>
                         <div class="nav-item" data-section="models">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-cpu"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-cpu"></use></svg></span>
                             <span class="nav-label">Models</span>
                         </div>
                         <div class="nav-item" data-section="channels">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-phone"></use></svg></span>
                             <span class="nav-label">Channels</span>
                             <span class="status-dot connected"></span>
                         </div>
                         <div class="nav-item" data-section="skills">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-zap"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-zap"></use></svg></span>
                             <span class="nav-label">Skills</span>
                             <span class="nav-badge" id="skillsBadge">-</span>
                         </div>
                         <div class="nav-item" data-section="tasks">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg></span>
                             <span class="nav-label">Cron Tasks</span>
                             <span class="task-count">0</span>
                         </div>
                         <div class="nav-item" data-section="workflows">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg></span>
                             <span class="nav-label">Workflows</span>
                         </div>
                         <div class="nav-item" data-section="settings">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-sliders"></use></svg></span>
                             <span class="nav-label">Settings</span>
                         </div>
                     </div>
@@ -128,43 +128,43 @@
                     <div class="nav-section">
                         <div class="nav-section-title">Business Modules</div>
                         <div class="nav-item" data-section="crm">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-wallet"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-wallet"></use></svg></span>
                             <span class="nav-label">Sales CRM</span>
                         </div>
                         <div class="nav-item" data-section="marketing">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-megaphone"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-megaphone"></use></svg></span>
                             <span class="nav-label">Marketing</span>
                         </div>
                         <div class="nav-item" data-section="projects">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-clipboard"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-clipboard"></use></svg></span>
                             <span class="nav-label">Projects</span>
                         </div>
                         <div class="nav-item" data-section="finance">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-dollar"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-dollar"></use></svg></span>
                             <span class="nav-label">Finance</span>
                         </div>
                         <div class="nav-item" data-section="support">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-headset"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-headset"></use></svg></span>
                             <span class="nav-label">Support</span>
                         </div>
                         <div class="nav-item" data-section="inventory">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-package"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-package"></use></svg></span>
                             <span class="nav-label">Inventory</span>
                         </div>
                         <div class="nav-item" data-section="hr">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-users"></use></svg></span>
                             <span class="nav-label">HR</span>
                         </div>
                         <div class="nav-item" data-section="legal">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-scale"/></svg></span>
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-scale"></use></svg></span>
                             <span class="nav-label">Legal</span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="nav-section" style="margin-top:auto">
-                    <div class="nav-item" id="uploadFilesNav" onclick="showUploadModal(); console.log('Upload clicked')">
-                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg></span>
+                    <div class="nav-item" id="uploadFilesNav">
+                            <span class="nav-icon"><svg class="ic" aria-hidden="true"><use href="#i-folder"></use></svg></span>
                             <span class="nav-label">Upload Files</span>
                         </div>
                     </div>
@@ -183,34 +183,41 @@
 
             <!-- Main Content Area -->
             <main class="content">
+                <form id="connectionForm" style="padding: 16px 24px; border-bottom: 1px solid var(--border-color);">
+                    <label for="connectionKey">Local API connection</label>
+                    <input id="connectionKey" type="password" autocomplete="off" placeholder="Paste local API key" aria-label="Local API key" style="margin: 0 12px; padding: 8px; max-width: 230px;">
+                    <button class="primary-btn" style="display:inline-flex" type="submit">Connect</button>
+                    <button class="primary-btn" style="display:inline-flex" type="button" id="disconnectApi">Disconnect</button>
+                    <p id="connectionStatus" role="status" style="margin-top: 8px;">Disconnected</p>
+                </form>
                 <!-- Chat Section (Default) -->
                 <section id="chat-section" class="section active">
                     <div class="chat-container">
                         <div class="chat-welcome">
                             <h1>What can I do for you?</h1>
-                            <p>Your AI agents are ready to help</p>
+                            <p><span id="chatStatus">Connect the API above. No model has run.</span></p>
                         </div>
                         
                         <div class="quick-actions">
-                            <button class="action-pill" onclick="startChat('Handle Tasks')">
-                                <span><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg></span> Handle Tasks
+                            <button class="action-pill">
+                                <span><svg class="ic" aria-hidden="true"><use href="#i-target"></use></svg></span> Handle Tasks
                             </button>
-                            <button class="action-pill" onclick="startChat('Continuous Execution')">
-                                <span><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg></span> Continuous Execution
+                            <button class="action-pill">
+                                <span><svg class="ic" aria-hidden="true"><use href="#i-play"></use></svg></span> Continuous Execution
                             </button>
-                            <button class="action-pill" onclick="startChat('Multi-Agent Parallel')">
-                                <span><svg class="ic" aria-hidden="true"><use href="#i-shuffle"/></svg></span> Multi-Agent Parallel
+                            <button class="action-pill">
+                                <span><svg class="ic" aria-hidden="true"><use href="#i-shuffle"></use></svg></span> Multi-Agent Parallel
                             </button>
-                            <button class="action-pill" onclick="startChat('Run Workflow')">
-                                <span><svg class="ic" aria-hidden="true"><use href="#i-clipboard"/></svg></span> Run Workflow
+                            <button class="action-pill">
+                                <span><svg class="ic" aria-hidden="true"><use href="#i-clipboard"></use></svg></span> Run Workflow
                             </button>
                         </div>
 
                         <div class="chat-input-container">
                             <div class="chat-input-wrapper">
-                                <button class="attach-btn"><svg class="ic" aria-hidden="true"><use href="#i-paperclip"/></svg></button>
+                                <button class="attach-btn"><svg class="ic" aria-hidden="true"><use href="#i-paperclip"></use></svg></button>
                                 <input type="text" class="chat-input" placeholder="Message AI Agency..." id="chatInput">
-                                <button class="send-btn" onclick="sendMessage()"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg></button>
+                                <button class="send-btn"><svg class="ic" aria-hidden="true"><use href="#i-send"></use></svg></button>
                             </div>
                         </div>
                     </div>
@@ -220,7 +227,7 @@
                 <section id="models-section" class="section">
                     <div class="section-header">
                         <h2>AI Models</h2>
-                        <button class="primary-btn" onclick="addProvider()">
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> Add Provider
                         </button>
                     </div>
@@ -256,7 +263,7 @@
                             <div class="provider-stats"><div class="stat"><span class="stat-label">Usage</span><span class="stat-value">Not tracked</span></div></div>
                         </div>
 
-                        <div class="add-provider-card" onclick="addProvider()">
+                        <div class="add-provider-card">
                             <span class="add-icon">+</span>
                             <span class="add-text">Add New Provider</span>
                         </div>
@@ -267,14 +274,14 @@
                 <section id="agents-section" class="section">
                     <div class="section-header">
                         <h2>AI Agents</h2>
-                        <button class="primary-btn" id="addAgentBtn" onclick="showAddAgentModal(); console.log('Add Agent clicked')">
+                        <button class="primary-btn" id="addAgentBtn" disabled title="Not wired to the API" disabled title="Not wired to the API">
                             <span>+</span> Add Agent
                         </button>
                     </div>
 
                     <div class="agents-grid">
                         <div class="agent-card">
-                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-code"/></svg></div>
+                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-code"></use></svg></div>
                             <div class="agent-info">
                                 <h3>Frontend Developer</h3>
                                 <p class="agent-division">Engineering</p>
@@ -287,7 +294,7 @@
                         </div>
 
                         <div class="agent-card">
-                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg></div>
+                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-layers"></use></svg></div>
                             <div class="agent-info">
                                 <h3>Backend Architect</h3>
                                 <p class="agent-division">Engineering</p>
@@ -300,7 +307,7 @@
                         </div>
 
                         <div class="agent-card">
-                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-trend"/></svg></div>
+                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-trend"></use></svg></div>
                             <div class="agent-info">
                                 <h3>DevOps Engineer</h3>
                                 <p class="agent-division">Engineering</p>
@@ -326,7 +333,7 @@
                         </div>
 
                         <div class="agent-card">
-                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg></div>
+                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-target"></use></svg></div>
                             <div class="agent-info">
                                 <h3>Growth Hacker</h3>
                                 <p class="agent-division">Marketing</p>
@@ -339,7 +346,7 @@
                         </div>
 
                         <div class="agent-card">
-                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></div>
+                            <div class="agent-avatar"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg></div>
                             <div class="agent-info">
                                 <h3>Security Engineer</h3>
                                 <p class="agent-division">Engineering</p>
@@ -357,7 +364,7 @@
                 <section id="channels-section" class="section">
                     <div class="section-header">
                         <h2>Messaging Channels</h2>
-                        <button class="primary-btn" id="addChannelBtn" onclick="showAddChannelModal(); console.log('Add Channel clicked')">
+                        <button class="primary-btn" id="addChannelBtn" disabled title="Not wired to the API" disabled title="Not wired to the API">
                             <span>+</span> Add Channel
                         </button>
                     </div>
@@ -365,7 +372,7 @@
                     <div class="channels-grid">
                         <div class="channel-card connected">
                             <div class="channel-header">
-                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg></span>
+                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-message"></use></svg></span>
                                 <span class="channel-name">Discord</span>
                                 <span class="channel-status connected">Connected</span>
                             </div>
@@ -380,7 +387,7 @@
 
                         <div class="channel-card">
                             <div class="channel-header">
-                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg></span>
+                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-send"></use></svg></span>
                                 <span class="channel-name">Telegram</span>
                                 <span class="channel-status">Not Connected</span>
                             </div>
@@ -392,7 +399,7 @@
 
                         <div class="channel-card">
                             <div class="channel-header">
-                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></span>
+                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-phone"></use></svg></span>
                                 <span class="channel-name">WhatsApp</span>
                                 <span class="channel-status">Not Connected</span>
                             </div>
@@ -404,7 +411,7 @@
 
                         <div class="channel-card">
                             <div class="channel-header">
-                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-at"/></svg></span>
+                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-at"></use></svg></span>
                                 <span class="channel-name">Twitter/X</span>
                                 <span class="channel-status">Not Connected</span>
                             </div>
@@ -416,7 +423,7 @@
 
                         <div class="channel-card">
                             <div class="channel-header">
-                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-briefcase"/></svg></span>
+                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-briefcase"></use></svg></span>
                                 <span class="channel-name">Slack</span>
                                 <span class="channel-status">Not Connected</span>
                             </div>
@@ -428,7 +435,7 @@
 
                         <div class="channel-card">
                             <div class="channel-header">
-                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg></span>
+                                <span class="channel-icon"><svg class="ic" aria-hidden="true"><use href="#i-mail"></use></svg></span>
                                 <span class="channel-name">Email</span>
                                 <span class="channel-status">Not Connected</span>
                             </div>
@@ -444,7 +451,7 @@
                 <section id="skills-section" class="section">
                     <div class="section-header">
                         <h2>Agent Skills</h2>
-                        <button class="primary-btn" id="addSkillBtn" style="margin-right: 10px;" onclick="showAddSkillModal(); console.log('Add Skill clicked')">
+                        <button class="primary-btn" id="addSkillBtn" disabled title="Not wired to the API" style="margin-right: 10px;" disabled title="Not wired to the API">
                             <span>+</span> Add Skill
                         </button>
                         <div class="skill-filters">
@@ -455,25 +462,11 @@
                         </div>
                     </div>
 
-                    <div class="skills-stats">
-                        <div class="skill-stat">
-                            <span class="skill-num">65</span>
-                            <span class="skill-label">Total</span>
-                        </div>
-                        <div class="skill-stat">
-                            <span class="skill-num">51</span>
-                            <span class="skill-label">Built-in</span>
-                        </div>
-                        <div class="skill-stat">
-                            <span class="skill-num">14</span>
-                            <span class="skill-label">Marketplace</span>
-                        </div>
-                    </div>
-
-                    <div class="skills-grid">
+                    <div class="skills-stats"><div class="skill-stat"><span class="skill-num" id="liveSkillTotal">-</span><span class="skill-label">Catalog skills (not executions)</span></div></div>
+                        <div class="skills-grid">
                         <div class="skill-card enabled">
                             <div class="skill-header">
-                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></span>
+                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg></span>
                                 <span class="skill-name">Web Research</span>
                                 <label class="skill-toggle">
                                     <input type="checkbox" checked>
@@ -485,7 +478,7 @@
 
                         <div class="skill-card enabled">
                             <div class="skill-header">
-                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg></span>
+                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-chart"></use></svg></span>
                                 <span class="skill-name">Data Analysis</span>
                                 <label class="skill-toggle">
                                     <input type="checkbox" checked>
@@ -497,7 +490,7 @@
 
                         <div class="skill-card enabled">
                             <div class="skill-header">
-                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg></span>
+                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-globe"></use></svg></span>
                                 <span class="skill-name">Browser Automation</span>
                                 <label class="skill-toggle">
                                     <input type="checkbox" checked>
@@ -509,7 +502,7 @@
 
                         <div class="skill-card enabled">
                             <div class="skill-header">
-                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg></span>
+                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-pen"></use></svg></span>
                                 <span class="skill-name">Content Writer</span>
                                 <label class="skill-toggle">
                                     <input type="checkbox" checked>
@@ -521,7 +514,7 @@
 
                         <div class="skill-card enabled">
                             <div class="skill-header">
-                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-code"/></svg></span>
+                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-code"></use></svg></span>
                                 <span class="skill-name">Code Executor</span>
                                 <label class="skill-toggle">
                                     <input type="checkbox" checked>
@@ -533,7 +526,7 @@
 
                         <div class="skill-card enabled">
                             <div class="skill-header">
-                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg></span>
+                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-folder"></use></svg></span>
                                 <span class="skill-name">File Manager</span>
                                 <label class="skill-toggle">
                                     <input type="checkbox" checked>
@@ -545,7 +538,7 @@
 
                         <div class="skill-card">
                             <div class="skill-header">
-                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-cart"/></svg></span>
+                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-cart"></use></svg></span>
                                 <span class="skill-name">E-commerce</span>
                                 <label class="skill-toggle">
                                     <input type="checkbox">
@@ -557,7 +550,7 @@
 
                         <div class="skill-card">
                             <div class="skill-header">
-                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-call"/></svg></span>
+                                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-call"></use></svg></span>
                                 <span class="skill-name">Calendar</span>
                                 <label class="skill-toggle">
                                     <input type="checkbox">
@@ -573,7 +566,7 @@
                 <section id="tasks-section" class="section">
                     <div class="section-header">
                         <h2>Scheduled Tasks</h2>
-                        <button class="primary-btn">
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> Add Task
                         </button>
                     </div>
@@ -600,10 +593,10 @@
                     </div>
 
                     <div class="empty-state">
-                        <span class="empty-icon"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg></span>
+                        <span class="empty-icon"><svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg></span>
                         <h3>No scheduled tasks</h3>
                         <p>Create your first task to automate workflows</p>
-                        <button class="primary-btn">Create First Task</button>
+                        <button class="primary-btn" disabled title="Not wired to the API">Create First Task</button>
                     </div>
                 </section>
 
@@ -611,7 +604,7 @@
                 <section id="workflows-section" class="section">
                     <div class="section-header">
                         <h2>Workflows</h2>
-                        <button class="primary-btn">
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> New Workflow
                         </button>
                     </div>
@@ -619,7 +612,7 @@
                     <div class="workflows-grid">
                         <div class="workflow-card">
                             <div class="workflow-header">
-                                <span class="workflow-icon"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></span>
+                                <span class="workflow-icon"><svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg></span>
                                 <span class="workflow-name">Code Review Pipeline</span>
                                 <span class="workflow-status active">Active</span>
                             </div>
@@ -633,7 +626,7 @@
 
                         <div class="workflow-card">
                             <div class="workflow-header">
-                                <span class="workflow-icon"><svg class="ic" aria-hidden="true"><use href="#i-trend"/></svg></span>
+                                <span class="workflow-icon"><svg class="ic" aria-hidden="true"><use href="#i-trend"></use></svg></span>
                                 <span class="workflow-name">Startup Launch</span>
                                 <span class="workflow-status active">Active</span>
                             </div>
@@ -647,7 +640,7 @@
 
                         <div class="workflow-card">
                             <div class="workflow-header">
-                                <span class="workflow-icon"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></span>
+                                <span class="workflow-icon"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg></span>
                                 <span class="workflow-name">Security Audit</span>
                                 <span class="workflow-status active">Active</span>
                             </div>
@@ -661,7 +654,7 @@
 
                         <div class="workflow-card">
                             <div class="workflow-header">
-                                <span class="workflow-icon"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg></span>
+                                <span class="workflow-icon"><svg class="ic" aria-hidden="true"><use href="#i-chart"></use></svg></span>
                                 <span class="workflow-name">Data Analysis</span>
                                 <span class="workflow-status">Draft</span>
                             </div>
@@ -678,8 +671,8 @@
                 <!-- Sales CRM Section -->
                 <section id="crm-section" class="section">
                     <div class="section-header">
-                        <h2><svg class="ic" aria-hidden="true"><use href="#i-wallet"/></svg> Sales CRM</h2>
-                        <button class="primary-btn" onclick="showModal('Add Lead', '<div class=\\'form-group\\'><label>Company Name</label><input type=\\'text\\' id=\\'leadCompany\\' placeholder=\\'Acme Corp\\'></div><div class=\\'form-group\\'><label>Contact</label><input type=\\'text\\' id=\\'leadContact\\' placeholder=\\'John Smith\\'></div><div class=\\'form-group\\'><label>Email</label><input type=\\'email\\' id=\\'leadEmail\\' placeholder=\\'john@acme.com\\'></div>', [{label:\\'Cancel\\',class:\\'btn-secondary\\',onclick:\\'this.closest(\".modal-overlay\").remove()\\'},{label:\\'Add Lead\\',class:\\'btn-primary\\',onclick:\\'addLead();this.closest(\".modal-overlay\").remove()\\'}])">
+                        <h2><svg class="ic" aria-hidden="true"><use href="#i-wallet"></use></svg> Sales CRM</h2>
+                        <button class="primary-btn" .modal-overlay\").remove()\\'},{label:\\'add lead\\',class:\\'btn-primary\\',onclick:\\'addlead();this.closest(\".modal-overlay\").remove()\\'}])" disabled title="Not wired to the API">
                             <span>+</span> Add Lead
                         </button>
                     </div>
@@ -699,7 +692,7 @@
                     </div>
                     <div class="leads-list" id="leadsList">
                         <div class="empty-state">
-                            <span class="empty-icon"><svg class="ic" aria-hidden="true"><use href="#i-wallet"/></svg></span>
+                            <span class="empty-icon"><svg class="ic" aria-hidden="true"><use href="#i-wallet"></use></svg></span>
                             <h3>No leads yet</h3>
                             <p>Add your first lead to start tracking prospects</p>
                         </div>
@@ -709,8 +702,8 @@
                 <!-- Marketing Section -->
                 <section id="marketing-section" class="section">
                     <div class="section-header">
-                        <h2><svg class="ic" aria-hidden="true"><use href="#i-megaphone"/></svg> Marketing</h2>
-                        <button class="primary-btn">
+                        <h2><svg class="ic" aria-hidden="true"><use href="#i-megaphone"></use></svg> Marketing</h2>
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> New Campaign
                         </button>
                     </div>
@@ -733,8 +726,8 @@
                 <!-- Projects Section -->
                 <section id="projects-section" class="section">
                     <div class="section-header">
-                        <h2><svg class="ic" aria-hidden="true"><use href="#i-clipboard"/></svg> Projects</h2>
-                        <button class="primary-btn">
+                        <h2><svg class="ic" aria-hidden="true"><use href="#i-clipboard"></use></svg> Projects</h2>
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> New Project
                         </button>
                     </div>
@@ -757,8 +750,8 @@
                 <!-- Finance Section -->
                 <section id="finance-section" class="section">
                     <div class="section-header">
-                        <h2><svg class="ic" aria-hidden="true"><use href="#i-dollar"/></svg> Finance</h2>
-                        <button class="primary-btn">
+                        <h2><svg class="ic" aria-hidden="true"><use href="#i-dollar"></use></svg> Finance</h2>
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> Create Invoice
                         </button>
                     </div>
@@ -781,8 +774,8 @@
                 <!-- Support Section -->
                 <section id="support-section" class="section">
                     <div class="section-header">
-                        <h2><svg class="ic" aria-hidden="true"><use href="#i-headset"/></svg> Customer Support</h2>
-                        <button class="primary-btn">
+                        <h2><svg class="ic" aria-hidden="true"><use href="#i-headset"></use></svg> Customer Support</h2>
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> New Ticket
                         </button>
                     </div>
@@ -805,8 +798,8 @@
                 <!-- Inventory Section -->
                 <section id="inventory-section" class="section">
                     <div class="section-header">
-                        <h2><svg class="ic" aria-hidden="true"><use href="#i-package"/></svg> Inventory</h2>
-                        <button class="primary-btn">
+                        <h2><svg class="ic" aria-hidden="true"><use href="#i-package"></use></svg> Inventory</h2>
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> Add Product
                         </button>
                     </div>
@@ -829,8 +822,8 @@
                 <!-- HR Section -->
                 <section id="hr-section" class="section">
                     <div class="section-header">
-                        <h2><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg> HR</h2>
-                        <button class="primary-btn">
+                        <h2><svg class="ic" aria-hidden="true"><use href="#i-users"></use></svg> HR</h2>
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> Add Employee
                         </button>
                     </div>
@@ -853,8 +846,8 @@
                 <!-- Legal Section -->
                 <section id="legal-section" class="section">
                     <div class="section-header">
-                        <h2><svg class="ic" aria-hidden="true"><use href="#i-scale"/></svg> Legal</h2>
-                        <button class="primary-btn">
+                        <h2><svg class="ic" aria-hidden="true"><use href="#i-scale"></use></svg> Legal</h2>
+                        <button class="primary-btn" disabled title="Not wired to the API">
                             <span>+</span> New Contract
                         </button>
                     </div>
@@ -912,51 +905,21 @@
                                 <span class="setting-value" id="settingsGatewayAddr">-</span>
                             </div>
                             <div class="setting-actions">
-                                <button class="secondary-btn">Restart</button>
-                                <button class="secondary-btn">View Logs</button>
+                                <button class="secondary-btn" disabled title="Not wired to the API">Restart</button>
+                                <button class="secondary-btn" disabled title="Not wired to the API">View Logs</button>
                             </div>
                         </div>
 
                         <div class="settings-group">
-                            <h3><svg class="ic" aria-hidden="true"><use href="#i-key"/></svg> BYOK - Bring Your Own Key</h3>
-                            <p class="setting-desc">Your API keys are stored locally and never sent to our servers.</p>
-                            <div class="api-keys-list" id="apiKeysList">
-                                <div class="api-key-item">
-                                    <span class="provider-icon"><span class="dot dot-blue"></span></span>
-                                    <input type="password" autocomplete="off" placeholder="sk-..." class="api-key-input" id="openaiKey">
-                                    <span class="provider-name">OpenAI</span>
-                                </div>
-                                <div class="api-key-item">
-                                    <span class="provider-icon"><span class="dot dot-purple"></span></span>
-                                    <input type="password" autocomplete="off" placeholder="sk-ant-..." class="api-key-input" id="anthropicKey">
-                                    <span class="provider-name">Anthropic</span>
-                                </div>
-                                <div class="api-key-item">
-                                    <span class="provider-icon"><span class="dot dot-orange"></span></span>
-                                    <input type="text" placeholder="http://localhost:11434" class="api-key-input" id="ollamaUrl">
-                                    <span class="provider-name">Ollama URL</span>
-                                </div>
-                                <div class="api-key-item">
-                                    <span class="provider-icon"><span class="dot dot-yellow"></span></span>
-                                    <input type="password" autocomplete="off" placeholder="sk-..." class="api-key-input" id="deepseekKey">
-                                    <span class="provider-name">DeepSeek</span>
-                                </div>
-                            </div>
-                            <button class="primary-btn" onclick="saveApiKeys()" style="margin-top: 12px;">
-                                <svg class="ic" aria-hidden="true"><use href="#i-save"/></svg> Save Keys
-                            </button>
-                            <p class="setting-desc" style="margin-top: 8px; font-size: 12px;">
-                                <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Keys stored in browser localStorage<br>
-                                <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Never sent to external servers<br>
-                                <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Used locally for AI requests
-                            </p>
+                            <h3>Model configuration</h3>
+                            <p class="setting-desc">Configure provider keys or Ollama on the API server, not in browser storage. Connecting the dashboard does not run a model. Hosted model calls may charge.</p>
                         </div>
 
                         <div class="settings-group">
                             <h3>Security</h3>
                             <div class="setting-item">
                                 <span class="setting-label">Internal API Key</span>
-                                <span class="setting-value">Set (hidden, not shown in this UI)</span>
+                                <span class="setting-value"><span id="apiKeyState">Not connected</span></span>
                             </div>
                             <div class="setting-item">
                                 <span class="setting-label">Rate Limiting</span>
