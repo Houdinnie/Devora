@@ -8,6 +8,7 @@ export const LLMConfigSchema = z.object({
   frequency_penalty: z.number().min(-2).max(2).optional(),
   presence_penalty: z.number().min(-2).max(2).optional(),
   stream: z.boolean().default(false),
+  timeout_ms: z.number().int().min(1000).max(600000).optional(),
 });
 
 export type LLMConfig = z.infer<typeof LLMConfigSchema>;
@@ -34,8 +35,8 @@ export interface LLMProvider {
   models: string[];
   supportsStreaming: boolean;
   isAvailable(): Promise<boolean>;
-  complete(prompt: string, config?: LLMConfig): Promise<LLMResponse>;
-  stream?(prompt: string, config?: LLMConfig): AsyncGenerator<LLMStreamChunk>;
+  complete(prompt: string, config?: Partial<LLMConfig>, signal?: AbortSignal): Promise<LLMResponse>;
+  stream?(prompt: string, config?: Partial<LLMConfig>, signal?: AbortSignal): AsyncGenerator<LLMStreamChunk>;
 }
 
 export interface AgentExecutionContext {

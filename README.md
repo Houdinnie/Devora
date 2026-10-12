@@ -51,14 +51,13 @@ Devora is a production-ready AI agency system that combines:
 
 **Option A: Docker (Recommended)**
 ```bash
-cd docker
-docker-compose up -d
+docker compose --env-file .env -f docker/docker-compose.yml up -d
 ```
 
 **Option B: Local PostgreSQL**
 1. Download from https://www.postgresql.org/download/
-2. Create user: `agency` with password: `agency123`
-3. Create database: `agency`
+2. Create a dedicated user with a strong password.
+3. Create the database named in `DATABASE_URL`
 
 ### 1. Install Dependencies
 ```bash
@@ -68,7 +67,8 @@ npm install
 ### 2. Configure Environment
 ```bash
 cp .env.example .env
-# Update DATABASE_URL if needed
+# Generate a secret with: openssl rand -hex 32
+# Put it in API_KEY and set a strong POSTGRES_PASSWORD before starting
 ```
 
 ### 2. Start the Server
@@ -83,10 +83,10 @@ npm run dev
 curl http://localhost:3000/health
 
 # List agents
-curl -H "Authorization: Bearer agency-dev-key" http://localhost:3000/api/agent
+curl -H "Authorization: Bearer $API_KEY" http://localhost:3000/api/agent
 
 # Run workflow
-curl -X POST -H "Authorization: Bearer agency-dev-key" \
+curl -X POST -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   http://localhost:3000/api/workflow/run \
   -d '{"workflow": "code-review", "inputs": {"repo_url": "https://github.com/..."}}'
@@ -205,15 +205,23 @@ docker-compose up -d
 
 Services:
 - **API**: Port 3000
-- **PostgreSQL**: Port 5432
-- **Redis**: Port 6379
-- **Ollama**: Port 11434
+- **PostgreSQL**, **Redis**, and **Ollama** are internal to the Compose network by default
 
 ## 🔐 Authentication
 
-Default API key: `agency-dev-key-change-in-production`
+Devora has no built-in default API key. Configure a unique `API_KEY` (at least 32 characters) before running in production. The environment key is a bootstrap administrator credential; keep it out of source control and rotate it if exposed. Set `CORS_ORIGIN` to a comma-separated allowlist of browser origins. Database API keys are stored as SHA-256 hashes, support expiry/revocation, and are returned only once when created via `/api/apikeys`.
 
-Create new keys via `/api/apikeys` endpoint.
+The Compose stack binds the API to localhost by default and keeps PostgreSQL, Redis, and Ollama internal to the Compose network. Set strong database credentials in your local `.env` file.
+
+## Workflow orchestration V2
+
+Workflow steps now support bounded parallel execution (`concurrency`, default 3; maximum 16), dependency validation, retries (`retries`, default 1 retry), and per-step timeouts (`timeout_ms`, default 120000; maximum 600000). Independent steps may run together; a dependent step starts only after all its dependencies complete successfully. Failed dependencies are skipped, cycles and unknown dependencies are reported, and cancellation propagates to supported model HTTP requests.
+
+A running workflow can be cancelled with `POST /api/workflow/runs/:runId/cancel`. Cancellation requests are persisted in PostgreSQL and polled by the owning worker, so a request sent to another API instance can cancel the run as long as all instances use the same database. Same-process cancellation is immediate. Inspect persisted run and step state with `GET /api/workflow/runs/:runId`.
+
+Per-step checkpoints (status, attempt, output/error, timestamps, and worktree path) are stored in `workflow_run_steps`. Apply `src/db/schema.sql` to a new database, or run `src/db/migrations/002_workflow_checkpoints.sql` against an existing database before deploying this version.
+
+To provide an isolated workspace to a workflow, pass `repositoryPath` and optionally `baseRef` to `POST /api/workflow/run`. Configure `DEVORA_REPOSITORIES_DIR` as an allow-listed parent directory and optionally `DEVORA_WORKTREE_DIR` as the worktree root. Each step gets a detached worktree and its path is included in the agent context and checkpoint. Remote URLs and paths outside the allow-list are rejected. Worktrees are deliberately retained after a run so generated changes are not discarded; clean them up after reviewing/committing with `DELETE /api/workflow/runs/:runId/worktrees`. Important: the current agent runtime is LLM-prompt based and does not yet expose a shell/file-edit tool API, so providing a worktree gives agents a safe workspace reference but does not itself execute code edits.
 
 ## 📁 Project Structure
 

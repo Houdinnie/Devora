@@ -1,16 +1,15 @@
+import 'dotenv/config';
+
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 
 import { authMiddleware, registerApiKey } from './middleware/authMiddleware.js';
 import { rateLimitMiddleware } from './middleware/authMiddleware.js';
 import { healthCheckHandler, readyCheckHandler, livenessHandler } from './routes/health.js';
 import { listAgents } from '../orchestrator/agent-registry.js';
-
-registerApiKey('agency-dev-key-change-in-production', 'dev-key', ['read', 'execute', 'admin']);
 
 import composeRoute from './routes/compose.js';
 import workflowRoute from './routes/workflow.js';
@@ -25,20 +24,38 @@ import swarmRoute from './routes/swarm.js';
 import securityAuditRoute from './routes/security-audit.js';
 import staticAnalysisRoute from './routes/static-analysis.js';
 
-dotenv.config();
+const PORT = Number.parseInt(process.env.PORT || '3000', 10);
+const configuredApiKey = process.env.API_KEY?.trim();
+
+if (process.env.NODE_ENV === 'production' && (!configuredApiKey || configuredApiKey.length < 32 || configuredApiKey === 'agency-dev-key-change-in-production')) {
+  throw new Error('Production startup blocked: set API_KEY to a unique secret of at least 32 characters.');
+}
+if (configuredApiKey) {
+  registerApiKey(configuredApiKey, 'environment-key', ['read', 'execute', 'admin']);
+}
+
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const app: Express = express();
-const PORT = parseInt(process.env.PORT || '3000', 10);
+app.disable('x-powered-by');
+app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
 
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin(origin, callback) {
+    // Non-browser clients omit Origin. Browser origins must be explicitly listed.
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Origin not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(morgan('combined'));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 app.get('/health', healthCheckHandler);
 app.get('/ready', readyCheckHandler);
@@ -60,31 +77,17 @@ app.use('/api/swarm', swarmRoute);
 app.use('/api/security', securityAuditRoute);
 app.use('/api/scan', staticAnalysisRoute);
 
-app.get('/api', async (req: Request, res: Response) => {
+app.get('/api', async (_req: Request, res: Response) => {
   const agents = await listAgents();
   res.json({
     name: 'Devora - AI Orchestra',
-    version: '1.0.0',
-    database: 'connected',
+    version: '2.0.0',
     agentsLoaded: agents.length,
     endpoints: {
       compose: 'POST /api/compose',
-      workflow: {
-        list: 'GET /api/workflow',
-        run: 'POST /api/workflow/run',
-        get: 'GET /api/workflow/:name',
-      },
-      agent: {
-        list: 'GET /api/agent',
-        get: 'GET /api/agent/:id',
-        execute: 'POST /api/agent/:id/execute',
-      },
-      session: {
-        list: 'GET /api/sessions',
-        create: 'POST /api/sessions',
-        get: 'GET /api/session/:id',
-        history: 'GET /api/session/:id/history',
-      },
+      workflow: { list: 'GET /api/workflow', run: 'POST /api/workflow/run', get: 'GET /api/workflow/:name', runStatus: 'GET /api/workflow/runs/:runId', cancel: 'POST /api/workflow/runs/:runId/cancel', cleanupWorktrees: 'DELETE /api/workflow/runs/:runId/worktrees' },
+      agent: { list: 'GET /api/agent', get: 'GET /api/agent/:id', execute: 'POST /api/agent/:id/execute' },
+      session: { list: 'GET /api/sessions', create: 'POST /api/sessions', get: 'GET /api/session/:id', history: 'GET /api/session/:id/history' },
     },
   });
 });
@@ -93,31 +96,28 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ error: 'Not Found', path: req.path });
 });
 
-interface ErrorWithStatus extends Error {
-  status?: number;
-  code?: string;
-}
-
-app.use((err: ErrorWithStatus, req: Request, res: Response, _next: NextFunction) => {
-  console.error('Error:', err);
-  
-  const status = err.status || 500;
-  const message = err.message || 'Internal Server Error';
-  
+interface ErrorWithStatus extends Error { status?: number; code?: string; }
+app.use((err: ErrorWithStatus, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('Unhandled API error:', err);
+  const status = err.status && err.status >= 400 && err.status < 600 ? err.status : 500;
+  const clientMessage = status >= 500 ? 'An unexpected server error occurred.' : (err.message || 'Request failed.');
   res.status(status).json({
-    error: status === 500 ? 'Internal Server Error' : err.code || 'Error',
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    error: status === 500 ? 'Internal Server Error' : (err.code || 'Error'),
+    message: clientMessage,
   });
 });
 
+if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+  console.warn('CORS_ORIGIN is empty: browser-origin requests are denied until an allowlist is configured.');
+}
+
 app.listen(PORT, '0.0.0.0', async () => {
-  const agents = await listAgents();
-  console.log(`🎼 Devora - AI Orchestra running on port ${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔧 API endpoints: http://localhost:${PORT}/api`);
-  console.log(`👥 Agents loaded: ${agents.length}`);
-  console.log(`🗄️ Database: connected`);
+  try {
+    const agents = await listAgents();
+    console.log(`🎼 Devora API listening on port ${PORT}; agents loaded: ${agents.length}`);
+  } catch (error) {
+    console.error('API started but agent registry initialization failed:', error);
+  }
 });
 
 export default app;

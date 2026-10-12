@@ -1,10 +1,24 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { generateApiKey, hashApiKey } from '../middleware/auth.js';
+import { generateApiKey } from '../middleware/auth.js';
 import { db } from '../../db/client.js';
 import { requireAuth, permissionMiddleware } from '../middleware/authMiddleware.js';
 
 const router = Router();
+
+interface ApiKeyRow {
+  id: string;
+  key_prefix: string;
+  name: string;
+  description: string | null;
+  permissions: string[];
+  rate_limit: number;
+  rate_limit_window: number;
+  is_active: boolean;
+  last_used_at: Date | null;
+  expires_at: Date | null;
+  created_at: Date;
+}
 
 const CreateApiKeySchema = z.object({
   name: z.string().min(1).max(255),
@@ -17,7 +31,7 @@ const CreateApiKeySchema = z.object({
 
 router.get('/', requireAuth, permissionMiddleware('admin'), async (req: Request, res: Response) => {
   try {
-    const result = await db.query(
+    const result = await db.query<ApiKeyRow>(
       `SELECT id, key_prefix, name, description, permissions, rate_limit, rate_limit_window,
               is_active, last_used_at, expires_at, created_at
        FROM api_keys
@@ -51,7 +65,7 @@ router.post('/', requireAuth, permissionMiddleware('admin'), async (req: Request
     const data = CreateApiKeySchema.parse(req.body);
     const { key, prefix, hash } = generateApiKey();
 
-    const result = await db.query(
+    const result = await db.query<ApiKeyRow>(
       `INSERT INTO api_keys (key_hash, key_prefix, name, description, permissions, rate_limit, rate_limit_window, expires_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, key_prefix, name, description, permissions, rate_limit, rate_limit_window, expires_at, created_at`,

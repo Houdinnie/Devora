@@ -9,6 +9,8 @@ export interface WorkflowStep {
   depends_on?: string[];
   output_var?: string;
   condition?: string;
+  retries?: number;
+  timeout_ms?: number;
 }
 
 export interface WorkflowDefinition {

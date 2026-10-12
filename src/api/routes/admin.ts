@@ -17,15 +17,15 @@ router.get('/stats', async (req: Request, res: Response) => {
       readdir(agentsDir).catch(() => []),
       readdir(skillsDir).catch(() => []),
       readdir(workflowsDir).catch(() => []),
-      db.query('SELECT COUNT(*) as count FROM sessions').catch(() => ({ rows: [{ count: 0 }] })),
-      db.query('SELECT COUNT(*) as count FROM channels').catch(() => ({ rows: [{ count: 0 }] })),
+      db.query<{ count: string }>('SELECT COUNT(*) as count FROM sessions').catch(() => ({ rows: [{ count: 0 }] })),
+      db.query<{ count: string }>('SELECT COUNT(*) as count FROM channels').catch(() => ({ rows: [{ count: 0 }] })),
     ]);
     
     const agents = agentsFiles.filter(f => f.endsWith('.md')).length;
     const skills = skillsFiles.filter(f => f.endsWith('.md')).length;
     const workflows = workflowsFiles.filter(f => f.endsWith('.yaml') || f.endsWith('.yml')).length;
-    const sessions = parseInt(sessionResult.rows[0]?.count || '0');
-    const channels = parseInt(channelResult.rows[0]?.count || '0');
+    const sessions = Number(sessionResult.rows[0]?.count || 0);
+    const channels = Number(channelResult.rows[0]?.count || 0);
     
     res.json({
       agents: { count: agents, path: agentsDir },
@@ -64,7 +64,7 @@ ${description || `${name} agent`}
 ${division}
 
 ## Capabilities
-${(capabilities || []).map(c => `- ${c}`).join('\n')}
+${(capabilities || []).map((c: string) => `- ${c}`).join('\n')}
 
 ## Tools
 - Task execution

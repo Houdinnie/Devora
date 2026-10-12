@@ -29,7 +29,10 @@ CREATE TABLE IF NOT EXISTS workflow_runs (
     error_message TEXT DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    completed_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
+    completed_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    cancel_requested_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    repository_path TEXT DEFAULT NULL,
+    base_ref TEXT DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_session ON workflow_runs(session_id);
@@ -141,10 +144,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS session_last_activity
-    BEFORE UPDATE ON sessions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_last_activity();
+DO $ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'session_last_activity') THEN
+        CREATE TRIGGER session_last_activity
+            BEFORE UPDATE ON sessions
+            FOR EACH ROW EXECUTE FUNCTION update_last_activity();
+    END IF;
+END $;
 
 -- Function to update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -155,15 +161,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS workflow_runs_updated
-    BEFORE UPDATE ON workflow_runs
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
+DO $ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'workflow_runs_updated') THEN
+        CREATE TRIGGER workflow_runs_updated
+            BEFORE UPDATE ON workflow_runs
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+    END IF;
+END $;
 
-CREATE TRIGGER IF NOT EXISTS workflow_templates_updated
-    BEFORE UPDATE ON workflow_templates
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
+DO $ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'workflow_templates_updated') THEN
+        CREATE TRIGGER workflow_templates_updated
+            BEFORE UPDATE ON workflow_templates
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+    END IF;
+END $;
 
 -- Channels table
 CREATE TABLE IF NOT EXISTS channels (
@@ -178,3 +190,20 @@ CREATE TABLE IF NOT EXISTS channels (
 
 CREATE INDEX IF NOT EXISTS idx_channels_type ON channels(type);
 CREATE INDEX IF NOT EXISTS idx_channels_status ON channels(status);
+
+-- Durable per-step workflow checkpoints and worktree metadata
+CREATE TABLE IF NOT EXISTS workflow_run_steps (
+    workflow_run_id UUID NOT NULL REFERENCES workflow_runs(id) ON DELETE CASCADE,
+    step_id VARCHAR(255) NOT NULL,
+    agent_id VARCHAR(255) NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'pending',
+    attempt INTEGER NOT NULL DEFAULT 0,
+    output_text TEXT,
+    error_message TEXT,
+    worktree_path TEXT,
+    started_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE,
+    PRIMARY KEY (workflow_run_id, step_id)
+);
+CREATE INDEX IF NOT EXISTS idx_workflow_run_steps_status ON workflow_run_steps(workflow_run_id, status);

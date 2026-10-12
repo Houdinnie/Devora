@@ -1,8 +1,7 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://redis:6379', {
   maxRetriesPerRequest: 3,
-  retryDelayOnFailover: 100,
   lazyConnect: true,
 });
 
