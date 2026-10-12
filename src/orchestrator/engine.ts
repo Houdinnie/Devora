@@ -101,15 +101,11 @@ export async function executeWorkflow(
     options?.stream?.onAgentStart?.(step.agent, step.id);
     const timeoutMs = boundedInteger(step.timeout_ms, timeoutDefault, 1000, 600000);
     const maxRetries = boundedInteger(step.retries, retries, 0, 5);
-    const controller = new AbortController();
-    const onAbort = () => controller.abort();
-    options?.signal?.addEventListener('abort', onAbort, { once: true });
     let finalResult: AgentExecutionResult | undefined;
     try {
       const task = replaceVariables(step.task, { ...inputs, ...outputs, ...Object.fromEntries([...stepOutput].map(([id, value]) => [id, value])) });
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         throwIfAborted(options?.signal);
-        controller.abort(); // Reset is not possible; create a fresh controller for each attempt below.
         const attemptController = new AbortController();
         const onWorkflowAbort = () => attemptController.abort();
         options?.signal?.addEventListener('abort', onWorkflowAbort, { once: true });
@@ -131,8 +127,6 @@ export async function executeWorkflow(
       }
     } catch (error) {
       finalResult = { success: false, output: '', duration: 0, error: error instanceof Error ? error.message : 'Step failed' };
-    } finally {
-      options?.signal?.removeEventListener('abort', onAbort);
     }
     if (options?.signal?.aborted) {
       state.set(step.id, 'skipped');
