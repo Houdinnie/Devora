@@ -1,5 +1,12 @@
 // ===== API Configuration =====
 const API_BASE = window.location.origin.includes('file:') ? 'http://localhost:3000' : '';
+function ic(name) {
+    return `<svg class="ic" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+}
+function esc(v) {
+    return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+// Dev key the local server registers in src/api/server.ts. Never rendered in the UI.
 const API_KEY = 'agency-dev-key-change-in-production';
 
 const apiHeaders = {
@@ -8,7 +15,7 @@ const apiHeaders = {
 };
 
 // ===== Debug =====
-console.log('🎼 Devora Dashboard initializing...');
+console.log('Devora Dashboard initializing...');
 console.log('API Base:', API_BASE);
 
 // ===== Toast Notifications =====
@@ -16,7 +23,7 @@ function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
-        <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+        <span class="toast-icon">${type === 'success' ? ic('check') : type === 'error' ? ic('x') : ic('info')}</span>
         <span class="toast-message">${message}</span>
     `;
     document.body.appendChild(toast);
@@ -116,8 +123,31 @@ async function runWorkflow(workflowName, inputs) {
 }
 
 async function checkHealth() {
-    const health = await fetchAPI('/health');
-    return health?.status === 'ok';
+    // Call /health directly: fetchAPI would toast an error when the server is down.
+    try {
+        const res = await fetch(`${API_BASE}/health`);
+        const health = await res.json();
+        return { reachable: !!health?.services?.api, storage: health?.services?.database ? 'database' : 'in-memory', version: health?.version };
+    } catch (e) {
+        return { reachable: false };
+    }
+}
+
+function setApiStatus(health) {
+    const base = API_BASE || window.location.origin;
+    const up = !!health.reachable;
+    const dotClass = up ? 'online' : 'offline';
+    for (const id of ['apiDot', 'gatewayDot']) {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('online', 'offline'); el.classList.add(dotClass); }
+    }
+    const text = up ? 'API online' : 'API offline';
+    const t = document.getElementById('apiStatusText'); if (t) t.textContent = text;
+    const g = document.getElementById('gatewayText'); if (g) g.textContent = text;
+    const d = document.getElementById('gatewayDetail');
+    if (d) d.textContent = up ? `${base.replace(/^https?:\/\//, '')} - ${health.storage}` : `Not reachable at ${base.replace(/^https?:\/\//, '')}`;
+    const ss = document.getElementById('settingsGatewayStatus'); if (ss) ss.textContent = up ? `Online (${health.storage} storage)` : 'Offline';
+    const sa = document.getElementById('settingsGatewayAddr'); if (sa) sa.textContent = base;
 }
 
 // ===== Navigation =====
@@ -281,21 +311,15 @@ function addProvider() {
 
 // ===== Initialize =====
 async function initDashboard() {
-    console.log('🎼 Devora Dashboard loading...');
+    console.log('Devora Dashboard loading...');
     
-    // Check API health
-    const healthy = await checkHealth();
-    if (healthy) {
-        console.log('✓ Connected to Devora API');
-        document.querySelector('.status-indicator')?.classList.add('online');
-        document.querySelector('.status-text').textContent = 'Connected to Devora';
-        
-        // Load data from API
+    const health = await checkHealth();
+    setApiStatus(health);
+    if (health.reachable) {
+        console.log('OK: connected to Devora API');
         loadDashboardData();
     } else {
-        console.log('⚠ API not available - running in demo mode');
-        document.querySelector('.status-indicator')?.classList.remove('online');
-        document.querySelector('.status-text').textContent = 'Demo Mode';
+        console.log('WARN: API not available, showing the static placeholder cards');
     }
 }
 
@@ -313,7 +337,10 @@ async function loadDashboardData() {
         console.log(`Loaded: ${agents.length} agents, ${workflows.length} workflows, ${sessions.length} sessions, ${skills.length} skills, ${channels.length} channels`);
         
         // Update sidebar badges with real counts
-        updateSidebarBadges(stats);
+        updateSidebarBadges({ ...stats, agents: { count: agents.length }, skills: { count: skills.length } });
+        const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setText('statSessions', sessions.length);
+        setText('statWorkflows', workflows.length);
         
         // Update UI with real data
         if (agents.length > 0) {
@@ -324,7 +351,6 @@ async function loadDashboardData() {
         }
         if (channels.length > 0) {
             updateChannelsGrid(channels);
-        }
         }
         if (sessions.length > 0) {
             document.getElementById('chatCount').textContent = `${sessions.length} sessions`;
@@ -341,18 +367,15 @@ function updateAgentsGrid(agents) {
     const grid = document.querySelector('.agents-grid');
     if (!grid) return;
     
-    grid.innerHTML = agents.slice(0, 6).map(agent => `
+    grid.innerHTML = agents.map(agent => `
         <div class="agent-card">
-            <div class="agent-avatar">${agent.icon || '🤖'}</div>
+            <div class="agent-avatar">${ic('bot')}</div>
             <div class="agent-info">
-                <h3>${agent.name}</h3>
-                <p class="agent-division">${agent.division || 'Specialized'}</p>
-                <p class="agent-specialty">${agent.specialty || agent.role || ''}</p>
+                <h3>${esc(agent.name)}</h3>
+                <p class="agent-division">${esc(agent.division || 'Specialized')}</p>
+                <p class="agent-specialty">${esc(agent.specialty || agent.role || agent.description || '')}</p>
             </div>
-            <div class="agent-stats">
-                <span class="stat-pill">${agent.tasks || 0} tasks</span>
-            </div>
-            <div class="agent-status ${agent.status === 'active' ? 'active' : 'paused'}"></div>
+            ${(agent.capabilities || []).length ? `<div class="agent-stats"><span class="stat-pill">${agent.capabilities.length} capabilities</span></div>` : ''}
         </div>
     `).join('');
 }
@@ -364,35 +387,39 @@ function updateWorkflowsGrid(workflows) {
     grid.innerHTML = workflows.map(workflow => `
         <div class="workflow-card">
             <div class="workflow-header">
-                <span class="workflow-icon">🔄</span>
-                <span class="workflow-name">${workflow.name}</span>
-                <span class="workflow-status ${workflow.status || 'draft'}">${workflow.status || 'Draft'}</span>
+                <span class="workflow-icon"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg></span>
+                <span class="workflow-name">${esc(workflow.name)}</span>
+                <span class="workflow-status">${esc(workflow.category || 'workflow')}</span>
             </div>
-            <p class="workflow-desc">${workflow.description || 'Workflow description'}</p>
+            <p class="workflow-desc">${esc(workflow.description || '')}</p>
             <div class="workflow-meta">
-                <span>${workflow.agents || 1} agents</span>
-                <span>•</span>
-                <span>${workflow.lastRun || 'Not run yet'}</span>
+                <span>${workflow.steps || 0} steps</span>
             </div>
         </div>
     `).join('');
+}
+
+function skillSummary(text) {
+    // API descriptions start with the title, then a blank line, then the summary.
+    const parts = String(text || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+    return (parts[1] || parts[0] || '').split('\n')[0].slice(0, 140);
 }
 
 function updateSkillsGrid(skills) {
     const grid = document.querySelector('.skills-grid');
     if (!grid) return;
     
-    grid.innerHTML = skills.slice(0, 8).map(skill => `
+    grid.innerHTML = skills.map(skill => `
         <div class="skill-card enabled">
             <div class="skill-header">
-                <span class="skill-icon">⚡</span>
-                <span class="skill-name">${skill.title || skill.name}</span>
+                <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-zap"/></svg></span>
+                <span class="skill-name">${esc(skill.title || skill.name)}</span>
                 <label class="skill-toggle">
                     <input type="checkbox" checked>
                     <span class="toggle-slider"></span>
                 </label>
             </div>
-            <p class="skill-desc">${skill.description || 'Skill description'}</p>
+            <p class="skill-desc">${esc(skillSummary(skill.description))}</p>
         </div>
     `).join('');
 }
@@ -402,18 +429,18 @@ function updateChannelsGrid(channels) {
     if (!grid) return;
     
     const channelTypes = {
-        discord: { icon: '💬', name: 'Discord' },
-        telegram: { icon: '✈️', name: 'Telegram' },
-        slack: { icon: '💼', name: 'Slack' },
-        whatsapp: { icon: '📱', name: 'WhatsApp' },
-        twitter: { icon: '🐦', name: 'Twitter/X' },
-        email: { icon: '📧', name: 'Email' }
+        discord: { icon: ic('message'), name: 'Discord' },
+        telegram: { icon: ic('send'), name: 'Telegram' },
+        slack: { icon: ic('briefcase'), name: 'Slack' },
+        whatsapp: { icon: ic('phone'), name: 'WhatsApp' },
+        twitter: { icon: ic('at'), name: 'Twitter/X' },
+        email: { icon: ic('mail'), name: 'Email' }
     };
     
     if (channels.length === 0) {
         grid.innerHTML = `
             <div class="empty-state">
-                <span class="empty-icon">📱</span>
+                <span class="empty-icon">${ic('phone')}</span>
                 <h3>No channels connected</h3>
                 <p>Connect a messaging channel to get started</p>
                 <button class="primary-btn" onclick="showAddChannelModal()">Add Channel</button>
@@ -423,7 +450,7 @@ function updateChannelsGrid(channels) {
     }
     
     grid.innerHTML = channels.map(ch => {
-        const typeInfo = channelTypes[ch.type] || { icon: '📱', name: ch.type };
+        const typeInfo = channelTypes[ch.type] || { icon: ic('phone'), name: ch.type };
         return `
             <div class="channel-card ${ch.status}">
                 <div class="channel-header">
@@ -480,7 +507,7 @@ function showModal(title, content, buttons = []) {
         <div class="modal-content">
             <div class="modal-header">
                 <h3>${title}</h3>
-                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">${ic('x')}</button>
             </div>
             <div class="modal-body">${content}</div>
             ${buttons.length ? `<div class="modal-footer">${buttons.map(b => `<button class="${b.class || 'btn'}" onclick="${b.onclick}">${b.label}</button>`).join('')}</div>` : ''}
@@ -586,7 +613,7 @@ function showUploadModal() {
     showModal('Upload Files to Devora', `
         <div class="upload-zone" id="dropZone">
             <input type="file" id="fileInput" multiple accept=".md,.yaml,.yml,.json,.txt" style="display:none">
-            <div class="upload-icon">📁</div>
+            <div class="upload-icon">${ic('folder')}</div>
             <p>Drag files here or click to browse</p>
             <span class="upload-hint">.md, .yaml, .yml, .json, .txt</span>
         </div>
@@ -621,13 +648,13 @@ function handleFiles(files) {
         const ext = file.name.split('.').pop()?.toLowerCase() || '';
         
         if (unsupportedTypes.includes(ext)) {
-            showToast(`⚠️ ${ext.toUpperCase()} files cannot be processed by current AI models. Convert to text first.`, 'error');
+            showToast(`${ext.toUpperCase()} files cannot be processed by current AI models. Convert to text first.`, 'error');
             return;
         }
         
         const item = document.createElement('div');
         item.className = 'upload-item';
-        const icon = textTypes.includes(ext) ? '📝' : '📄';
+        const icon = textTypes.includes(ext) ? ic('pen') : ic('file');
         item.innerHTML = `<span class="file-icon">${icon}</span><span class="file-name">${file.name}</span><span class="file-size">${(file.size/1024).toFixed(1)}KB</span>`;
         list.appendChild(item);
         showToast(`File ready: ${file.name}`);
@@ -659,7 +686,7 @@ function connectChannelPrompt(id) {
     }
 }
 
-console.log('🎼 Devora Dashboard loaded');
+console.log('Devora Dashboard loaded');
 console.log('Use the sidebar to navigate between sections');
 
 // Auto-save theme preference
@@ -733,15 +760,6 @@ function loadApiKeys() {
     }
 }
 
-function toggleInternalKey() {
-    const value = document.querySelector('.settings-group:nth-child(3) .setting-value');
-    if (value.textContent === '••••••••••••') {
-        value.textContent = 'agency-dev-key-change-in-production';
-    } else {
-        value.textContent = '••••••••••••';
-    }
-}
-
 // Load API keys on init
 loadApiKeys();
 
@@ -781,7 +799,7 @@ function updateLeadStats() {
 
 // ===== Button Event Listeners =====
 setTimeout(() => {
-    console.log('🎯 Setting up button handlers...');
+    console.log('Setting up button handlers...');
     
     const addAgentBtn = document.getElementById('addAgentBtn');
     const addChannelBtn = document.getElementById('addChannelBtn');
@@ -790,23 +808,23 @@ setTimeout(() => {
     
     if (addAgentBtn) {
         addAgentBtn.onclick = function() { console.log('Agent clicked'); showAddAgentModal(); };
-        console.log('✓ Add Agent button wired');
+        console.log('OK: Add Agent button wired');
     } else {
-        console.log('✕ Add Agent button not found');
+        console.log('MISSING: Add Agent button not found');
     }
     
     if (addChannelBtn) {
         addChannelBtn.onclick = function() { console.log('Channel clicked'); showAddChannelModal(); };
-        console.log('✓ Add Channel button wired');
+        console.log('OK: Add Channel button wired');
     }
     
     if (addSkillBtn) {
         addSkillBtn.onclick = function() { console.log('Skill clicked'); showAddSkillModal(); };
-        console.log('✓ Add Skill button wired');
+        console.log('OK: Add Skill button wired');
     }
     
     if (uploadFilesNav) {
         uploadFilesNav.onclick = function() { console.log('Upload clicked'); showUploadModal(); };
-        console.log('✓ Upload button wired');
+        console.log('OK: Upload button wired');
     }
 }, 500);
