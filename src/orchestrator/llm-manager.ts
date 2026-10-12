@@ -29,12 +29,12 @@ export class OllamaProvider implements LLMProvider {
     }
   }
 
-  async complete(prompt: string, config?: Partial<LLMConfig>): Promise<LLMResponse> {
+  async complete(prompt: string, config?: Partial<LLMConfig>, signal?: AbortSignal): Promise<LLMResponse> {
     const model = config?.model || 'qwen2.5-coder:14b';
     const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(config?.timeout_ms ?? 120000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(config?.timeout_ms ?? 120000)]) : AbortSignal.timeout(config?.timeout_ms ?? 120000),
       body: JSON.stringify({
         model, prompt, stream: false,
         options: { temperature: config?.temperature ?? 0.7, num_predict: config?.max_tokens ?? 4096 },
@@ -56,7 +56,7 @@ export class OllamaProvider implements LLMProvider {
     };
   }
 
-  async *stream(prompt: string, config?: Partial<LLMConfig>): AsyncGenerator<{ delta: string; model: string; done: boolean }> {
+  async *stream(prompt: string, config?: Partial<LLMConfig>, signal?: AbortSignal): AsyncGenerator<{ delta: string; model: string; done: boolean }> {
     const model = config?.model || 'qwen2.5-coder:14b';
     const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
       method: 'POST',
@@ -107,17 +107,17 @@ export class LLMManager {
     this.primaryProvider = ollama;
   }
 
-  async complete(prompt: string, config?: Partial<LLMConfig>): Promise<LLMResponse> {
+  async complete(prompt: string, config?: Partial<LLMConfig>, signal?: AbortSignal): Promise<LLMResponse> {
     const model = config?.model;
-    if (model && model.includes('claude') && process.env.OPENROUTER_API_KEY) return this.completeWithOpenRouter(prompt, config);
-    if (model?.startsWith('hf-') && process.env.HF_TOKEN) return this.completeWithHuggingFace(prompt, config);
-    return this.primaryProvider.complete(prompt, config);
+    if (model && model.includes('claude') && process.env.OPENROUTER_API_KEY) return this.completeWithOpenRouter(prompt, config, signal);
+    if (model?.startsWith('hf-') && process.env.HF_TOKEN) return this.completeWithHuggingFace(prompt, config, signal);
+    return this.primaryProvider.complete(prompt, config, signal);
   }
 
-  async *stream(prompt: string, config?: Partial<LLMConfig>): AsyncGenerator<{ delta: string; model: string; done: boolean }> {
+  async *stream(prompt: string, config?: Partial<LLMConfig>, signal?: AbortSignal): AsyncGenerator<{ delta: string; model: string; done: boolean }> {
     const stream = this.primaryProvider.stream;
     if (!stream) throw new Error('Provider does not support streaming');
-    yield* stream.call(this.primaryProvider, prompt, config);
+    yield* stream.call(this.primaryProvider, prompt, config, signal);
   }
 
   private async completeWithOpenRouter(prompt: string, config?: Partial<LLMConfig>): Promise<LLMResponse> {
