@@ -142,7 +142,6 @@ export async function executeWorkflow(
     try {
       const result = await executeAgent(step.agent, taskWithContext, {
         sessionId: options?.sessionId,
-        stream: options?.stream,
       });
       
       if (result.success) {
