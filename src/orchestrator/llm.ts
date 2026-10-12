@@ -35,8 +35,8 @@ export interface LLMProvider {
   models: string[];
   supportsStreaming: boolean;
   isAvailable(): Promise<boolean>;
-  complete(prompt: string, config?: LLMConfig): Promise<LLMResponse>;
-  stream?(prompt: string, config?: LLMConfig): AsyncGenerator<LLMStreamChunk>;
+  complete(prompt: string, config?: Partial<LLMConfig>): Promise<LLMResponse>;
+  stream?(prompt: string, config?: Partial<LLMConfig>): AsyncGenerator<LLMStreamChunk>;
 }
 
 export interface AgentExecutionContext {
