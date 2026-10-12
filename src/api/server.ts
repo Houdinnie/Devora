@@ -32,7 +32,7 @@ if (process.env.NODE_ENV === 'production' && (!configuredApiKey || configuredApi
   throw new Error('Production startup blocked: set API_KEY to a unique secret of at least 32 characters.');
 }
 if (configuredApiKey) {
-  registerApiKey(configuredApiKey, 'environment-key', ['read', 'execute']);
+  registerApiKey(configuredApiKey, 'environment-key', ['read', 'execute', 'admin']);
 }
 
 const allowedOrigins = (process.env.CORS_ORIGIN || '')
