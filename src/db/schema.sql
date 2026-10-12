@@ -30,7 +30,9 @@ CREATE TABLE IF NOT EXISTS workflow_runs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     completed_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    cancel_requested_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
+    cancel_requested_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    repository_path TEXT DEFAULT NULL,
+    base_ref TEXT DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_session ON workflow_runs(session_id);
