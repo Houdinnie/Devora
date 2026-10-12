@@ -51,7 +51,7 @@ Devora is a production-ready AI agency system that combines:
 
 **Option A: Docker (Recommended)**
 ```bash
-docker compose --env-file ../.env up -d
+docker compose --env-file .env -f docker/docker-compose.yml up -d
 ```
 
 **Option B: Local PostgreSQL**
@@ -67,7 +67,8 @@ npm install
 ### 2. Configure Environment
 ```bash
 cp .env.example .env
-# Set unique API_KEY and strong POSTGRES_PASSWORD values before starting
+# Generate a secret with: openssl rand -hex 32
+# Put it in API_KEY and set a strong POSTGRES_PASSWORD before starting
 ```
 
 ### 2. Start the Server
