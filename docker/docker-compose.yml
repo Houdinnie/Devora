@@ -1,26 +1,24 @@
-# Autonomous AI Agency - Docker Compose
-version: '3.8'
-
+# Devora V2 - local deployment
 services:
   api:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: ai-agency-api
+    container_name: devora-api
     ports:
-      - "3000:3000"
+      - "${API_BIND_ADDRESS:-127.0.0.1}:3000:3000"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - DATABASE_URL=postgres://agency:agency123@postgres:5432/agency
-      - DATABASE_URL_SYNC=postgres://agency:agency123@postgres:5432/agency?sslmode=disable
-      - REDIS_URL=redis://redis:6379
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - OLLAMA_HOST=ollama:11434
-      - API_KEY=${API_KEY:-agency-dev-key-change-in-production}
-      - LITELLM_MASTER_KEY=sk-litellm-local
-      - HF_TOKEN=${HF_TOKEN:-}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER:?Set POSTGRES_USER}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-devora}
+      DATABASE_URL_SYNC: postgres://${POSTGRES_USER:?Set POSTGRES_USER}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-devora}?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_HOST: http://ollama:11434
+      API_KEY: ${API_KEY:?Set a unique API_KEY of at least 32 characters}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      HF_TOKEN: ${HF_TOKEN:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
     volumes:
       - ../agents:/app/agents:ro
       - ../workflows:/app/workflows:ro
@@ -43,20 +41,21 @@ services:
     restart: unless-stopped
 
   ollama:
-    image: ollama/ollama:latest
-    container_name: ai-agency-ollama
-    ports:
-      - "11434:11434"
+    image: ollama/ollama:0.12.6
+    container_name: devora-ollama
+    # Internal-only: the API reaches Ollama over the Compose network.
+    expose:
+      - "11434"
     volumes:
       - ollama-data:/root/.ollama
     environment:
-      - OLLAMA_KEEP_ALIVE=24h
-      - OLLAMA_NUM_PARALLEL=2
-      - OLLAMA_MAX_LOADED_MODELS=2
-    command: >
-      sh -c "ollama pull qwen2.5-coder:14b && ollama pull phi4 && ollama serve"
+      OLLAMA_KEEP_ALIVE: 24h
+      OLLAMA_NUM_PARALLEL: 2
+      OLLAMA_MAX_LOADED_MODELS: 2
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["ollama serve & pid=$!; until ollama list >/dev/null 2>&1; do sleep 2; done; ollama pull qwen2.5-coder:14b; ollama pull phi4; wait $pid"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD", "ollama", "list"]
       interval: 60s
       timeout: 30s
       retries: 5
@@ -64,13 +63,13 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7-alpine
-    container_name: ai-agency-redis
-    ports:
-      - "6379:6379"
+    image: redis:7.4-alpine
+    container_name: devora-redis
+    expose:
+      - "6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -79,19 +78,19 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: ankane/pgvector:latest
-    container_name: ai-agency-postgres
-    ports:
-      - "5432:5432"
+    image: ankane/pgvector:0.5.1
+    container_name: devora-postgres
+    expose:
+      - "5432"
     environment:
-      - POSTGRES_USER=agency
-      - POSTGRES_PASSWORD=agency123
-      - POSTGRES_DB=agency
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-devora}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ../src/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agency -d agency"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-devora}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -102,7 +101,3 @@ volumes:
   redis-data:
   postgres-data:
   agent-output:
-
-networks:
-  default:
-    name: ai-agency-network
