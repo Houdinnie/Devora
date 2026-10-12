@@ -8,6 +8,7 @@ export const LLMConfigSchema = z.object({
   frequency_penalty: z.number().min(-2).max(2).optional(),
   presence_penalty: z.number().min(-2).max(2).optional(),
   stream: z.boolean().default(false),
+  timeout_ms: z.number().int().min(1000).max(600000).optional(),
 });
 
 export type LLMConfig = z.infer<typeof LLMConfigSchema>;
