@@ -213,6 +213,14 @@ Devora has no built-in default API key. Configure a unique `API_KEY` (at least 3
 
 The Compose stack binds the API to localhost by default and keeps PostgreSQL, Redis, and Ollama internal to the Compose network. Set strong database credentials in your local `.env` file.
 
+## Workflow orchestration V2
+
+Workflow steps now support bounded parallel execution (`concurrency`, default 3; maximum 16), dependency validation, retries (`retries`, default 1 retry), and per-step timeouts (`timeout_ms`, default 120000; maximum 600000). Independent steps may run together; a dependent step starts only after all its dependencies complete successfully. Failed dependencies are skipped, cycles and unknown dependencies are reported, and cancellation propagates to supported model HTTP requests.
+
+A running workflow can be cancelled with `POST /api/workflow/runs/:runId/cancel`, using the `runId` returned when starting the workflow. Cancellation controllers are process-local, so this endpoint currently targets runs active in the same API process; durable cancellation across restarts/replicas remains future work.
+
+For isolated code changes, `src/orchestrator/worktree-manager.ts` provides a local Git worktree helper. Configure `DEVORA_REPOSITORIES_DIR` as an allow-listed parent directory and optionally `DEVORA_WORKTREE_DIR` as the worktree root. Only local repositories beneath the allow-list are accepted; remote URLs and shell-based command execution are rejected. This utility is not yet automatically invoked by agent workflows.
+
 ## 📁 Project Structure
 
 ```
