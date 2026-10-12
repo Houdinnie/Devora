@@ -1447,3 +1447,49 @@ body {
 .stage-qualified { background: #fff3e0; color: #e65100; }
 .stage-proposal { background: #f3e5f5; color: #7b1fa2; }
 .stage-closed { background: #e8f5e9; color: #2e7d32; }
+/* ===== Inline SVG icons (replace emoji, which render as empty boxes without an emoji font) ===== */
+.ic {
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: -0.125em;
+}
+.app-icon, .nav-icon, .provider-icon, .channel-icon, .skill-icon, .workflow-icon, .empty-icon, .upload-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.app-icon .ic { width: 15px; height: 15px; color: var(--accent-blue); }
+.nav-icon .ic { width: 16px; height: 16px; }
+.nav-item.active .nav-icon .ic { color: var(--accent-blue); }
+.agent-avatar { display: flex; align-items: center; justify-content: center; color: var(--accent-blue); }
+.agent-avatar .ic { width: 22px; height: 22px; }
+.empty-icon .ic, .upload-icon .ic { width: 40px; height: 40px; color: var(--text-tertiary); }
+.channel-icon .ic, .skill-icon .ic, .workflow-icon .ic { width: 20px; height: 20px; color: var(--accent-blue); }
+.action-pill .ic, .attach-btn .ic, .primary-btn .ic { width: 15px; height: 15px; }
+.send-btn { display: flex; align-items: center; justify-content: center; }
+.send-btn .ic { width: 16px; height: 16px; }
+.attach-btn { display: flex; align-items: center; justify-content: center; }
+.attach-btn .ic { width: 18px; height: 18px; }
+.section-header h2 .ic, .settings-group h3 .ic { width: 18px; height: 18px; margin-right: 6px; color: var(--accent-blue); }
+.toast-icon { display: inline-flex; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.dot-blue { background: var(--accent-blue); }
+.dot-purple { background: var(--accent-purple); }
+.dot-orange { background: var(--accent-orange); }
+.dot-yellow { background: #ffcc00; }
+
+/* ===== Layout fixes ===== */
+.sidebar { flex-shrink: 0; height: 100%; overflow: hidden; }
+.nav-sections { min-height: 0; }
+.sidebar .nav-section[style*="margin-top:auto"] { margin-top: 8px !important; margin-bottom: 0; }
+.nav-item .nav-label { white-space: nowrap; }
+.main-layout > .content { min-width: 0; }
+.status-item { word-break: break-all; }
+.status-dot.online { background: var(--accent-green); }
+.status-dot.offline { background: var(--accent-red); }
