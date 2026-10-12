@@ -23,7 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund --include=optional
       - name: Ensure Rollup native binary is installed
-        run: npm install --no-save --no-package-lock --no-audit --no-fund "@rollup/rollup-linux-x64-gnu@$(node -p \"require('./node_modules/rollup/package.json').version\")"
+        run: |
+          ROLLUP_VERSION=$(node -p "require('./node_modules/rollup/package.json').version")
+          npm install --no-save --no-package-lock --no-audit --no-fund "@rollup/rollup-linux-x64-gnu@$ROLLUP_VERSION"
       - name: Type-check
         run: npm run typecheck
       - name: Build
