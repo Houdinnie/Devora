@@ -5,7 +5,7 @@ import { db } from '../../db/client.js';
 
 declare global {
   namespace Express {
-    interface Request { auth?: { userId: string; apiKeyId: string }; }
+    interface Request { auth?: { userId: string; apiKeyId: string; permissions?: string[] }; }
   }
 }
 
@@ -21,7 +21,8 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   const header = req.headers.authorization || (req.headers['x-api-key'] as string | undefined);
   const inMemory = validateRequestAuth(header, apiKeyStore);
   if (inMemory.valid) {
-    req.auth = { userId: inMemory.userId!, apiKeyId: inMemory.apiKeyId! };
+    const entry = [...apiKeyStore.values()].find((item) => item.id === inMemory.apiKeyId);
+    req.auth = { userId: inMemory.userId!, apiKeyId: inMemory.apiKeyId!, permissions: entry?.permissions || [] };
     next();
     return;
   }
@@ -53,11 +54,10 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     const permissions = Array.isArray(stored.permissions)
       ? stored.permissions
       : JSON.parse(stored.permissions || '[]') as string[];
-    registerApiKey(rawKey, stored.id, permissions);
     void db.query('UPDATE api_keys SET last_used_at = NOW() WHERE id = $1', [stored.id]).catch((error) => {
       console.error('Unable to update API key last-used timestamp:', error);
     });
-    req.auth = { userId: stored.id, apiKeyId: stored.id };
+    req.auth = { userId: stored.id, apiKeyId: stored.id, permissions };
     next();
   } catch (error) {
     console.error('API key verification failed:', error);
@@ -67,7 +67,10 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
 
 export function optionalAuthMiddleware(req: Request, _res: Response, next: NextFunction): void {
   const authResult = validateRequestAuth(req.headers.authorization || (req.headers['x-api-key'] as string | undefined), apiKeyStore);
-  if (authResult.valid) req.auth = { userId: authResult.userId!, apiKeyId: authResult.apiKeyId! };
+  if (authResult.valid) {
+    const entry = [...apiKeyStore.values()].find((item) => item.id === authResult.apiKeyId);
+    req.auth = { userId: authResult.userId!, apiKeyId: authResult.apiKeyId!, permissions: entry?.permissions || [] };
+  }
   next();
 }
 
@@ -103,7 +106,7 @@ export function permissionMiddleware(requiredPermission: string) {
       return;
     }
     const keyInfo = [...apiKeyStore.values()].find((entry) => entry.id === req.auth!.apiKeyId);
-    const permissions = keyInfo?.permissions || [];
+    const permissions = req.auth.permissions || keyInfo?.permissions || [];
     if (!permissions.includes(requiredPermission) && !permissions.includes('admin')) {
       res.status(403).json({ error: 'Forbidden', message: `Required permission: ${requiredPermission}` });
       return;
