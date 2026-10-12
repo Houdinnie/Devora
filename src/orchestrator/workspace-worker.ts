@@ -69,7 +69,7 @@ export async function applyWorkspaceChanges(worktreePath: string, rawOutput: str
   const root = await realpath(worktreePath);
   const normalized = rawOutput.trim().replace(/^\x60{3}(?:json)?\s*/i, '').replace(/\s*\x60{3}$/i, '');
   let parsed: unknown;
-  try { parsed = JSON.parse(normalized); } catch { throw new Error('Coding agent must return a JSON object with summary and files'); }
+  try { parsed = JSON.parse(normalized); } catch { throw new Error('Coding agent must return valid JSON: an object with summary and files'); }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid coding-agent response');
   const response = parsed as { summary?: unknown; files?: unknown };
   if (typeof response.summary !== 'string' || !Array.isArray(response.files)) throw new Error('Coding-agent response requires a summary and files array');
