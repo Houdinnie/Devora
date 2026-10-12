@@ -115,7 +115,9 @@ export class LLMManager {
   }
 
   async *stream(prompt: string, config?: Partial<LLMConfig>): AsyncGenerator<{ delta: string; model: string; done: boolean }> {
-    yield* this.primaryProvider.stream(prompt, config);
+    const stream = this.primaryProvider.stream;
+    if (!stream) throw new Error('Provider does not support streaming');
+    yield* stream.call(this.primaryProvider, prompt, config);
   }
 
   private async completeWithOpenRouter(prompt: string, config?: Partial<LLMConfig>): Promise<LLMResponse> {
