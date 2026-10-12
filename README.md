@@ -83,7 +83,7 @@ npm run dev
 curl http://localhost:3000/health
 
 # List agents
-curl -H "Authorization: Bearer agency-dev-key" http://localhost:3000/api/agent
+curl -H "Authorization: Bearer $API_KEY" http://localhost:3000/api/agent
 
 # Run workflow
 curl -X POST -H "Authorization: Bearer agency-dev-key" \
