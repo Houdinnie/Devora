@@ -15,17 +15,23 @@ function isWithin(parent: string, child: string): boolean {
   return rel === '' || (!rel.startsWith('..' + sep) && rel !== '..' && !isAbsolute(rel));
 }
 
+function isProtectedPath(filePath: string): boolean {
+  const parts = filePath.split('/');
+  const name = parts[parts.length - 1].toLowerCase();
+  if (parts.includes('.git') || parts.includes('node_modules') || parts.includes('.ssh') || parts.includes('.aws')) return true;
+  if (/^\.env(?:\.|$)/i.test(name) && name !== '.env.example') return true;
+  if (/^(\.npmrc|\.pypirc|\.netrc|\.git-credentials|credentials?(\..*)?|secrets?(\..*)?|id_rsa(\..*)?|id_ed25519(\..*)?)$/i.test(name)) return true;
+  if (/\.(pem|key|p12|pfx|crt|cer|der|keystore|jks)$/i.test(name)) return true;
+  return false;
+}
+
 function safeRelativePath(filePath: string): string {
   if (!filePath || filePath.includes('\0') || isAbsolute(filePath) || filePath.startsWith('/') || filePath.includes('\\')) {
     throw new Error('Workspace edit path must be a relative POSIX path');
   }
   const parts = filePath.split('/');
   if (parts.some(part => !part || part === '.' || part === '..')) throw new Error('Workspace edit path contains an unsafe segment');
-  if (parts[0] === '.git' || parts.includes('node_modules') || parts.includes('.ssh') ||
-      /^\.env(?:\.|$)/i.test(parts[parts.length - 1]) && parts[parts.length - 1] !== '.env.example' ||
-      /(^|\/)(id_rsa|id_ed25519|credentials\.json|secrets?\.(json|ya?ml))$/i.test(filePath)) {
-    throw new Error('Workspace edit path targets a protected file or directory');
-  }
+  if (isProtectedPath(filePath)) throw new Error('Workspace edit path targets a protected file or directory');
   return parts.join('/');
 }
 
@@ -35,7 +41,7 @@ export async function buildWorkspaceContext(worktreePath: string): Promise<{ fil
     timeout: 15000, maxBuffer: 2 * 1024 * 1024, windowsHide: true,
   });
   const paths = result.stdout.split('\n').map(s => s.trim()).filter(Boolean)
-    .filter(p => !p.startsWith('.git/') && !p.includes('/node_modules/') && !/^\.env(?:\.|$)/i.test(p) && !/^node_modules\//.test(p));
+    .filter(p => !p.startsWith('.git/') && !p.includes('/node_modules/') && !/^node_modules\//.test(p) && !isProtectedPath(p));
   const priority = (p: string) => p === 'package.json' ? 0 : p === 'README.md' ? 1 : p === 'tsconfig.json' ? 2 : p.startsWith('src/') ? 3 : 4;
   paths.sort((a, b) => priority(a) - priority(b) || a.localeCompare(b));
   const files: Array<{ path: string; content: string }> = [];
