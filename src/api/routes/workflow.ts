@@ -52,6 +52,16 @@ router.get('/:name', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/runs/:runId/cancel', (req: Request, res: Response) => {
+  const controller = activeWorkflowControllers.get(req.params.runId);
+  if (!controller) {
+    res.status(404).json({ error: 'Workflow is not active or has already finished' });
+    return;
+  }
+  controller.abort();
+  res.status(202).json({ success: true, runId: req.params.runId, status: 'cancellation_requested' });
+});
+
 router.post('/run', async (req: Request, res: Response) => {
   try {
     const { workflow: workflowName, inputs, sessionId, stream } = RunWorkflowSchema.parse(req.body);
@@ -103,6 +113,8 @@ router.post('/run', async (req: Request, res: Response) => {
         
         if (result.status === 'completed') {
           sse.workflowComplete(result.outputs);
+        } else if (result.status === 'cancelled') {
+          sse.sendEvent('cancelled', { runId, error: result.error });
         } else {
           sse.workflowFailed(result.error || 'Workflow failed');
         }
@@ -126,12 +138,17 @@ router.post('/run', async (req: Request, res: Response) => {
       return;
     }
     
-    const result = await executeWorkflow(workflowName, inputs || {}, {
-      inputs: inputs || {},
-      outputs: {},
-      sessionId: session.id,
-      signal: controller.signal,
-    });
+    let result;
+    try {
+      result = await executeWorkflow(workflowName, inputs || {}, {
+        inputs: inputs || {},
+        outputs: {},
+        sessionId: session.id,
+        signal: controller.signal,
+      });
+    } finally {
+      activeWorkflowControllers.delete(runId);
+    }
     
     await db.query(
       `UPDATE workflow_runs SET status = $1, outputs = $2, agent_results = $3,
