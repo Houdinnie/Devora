@@ -96,7 +96,7 @@ export async function executeWorkflow(
   const state = new Map<string, 'pending' | 'running' | 'completed' | 'failed' | 'skipped'>();
   const stepOutput = new Map<string, string>();
   const failureReasons = new Map<string, string>();
-  steps.forEach(step => { state.set(step.id, 'pending'); void checkpoint(options, { stepId: step.id, agentId: step.agent, status: 'pending' }); });
+  for (const step of steps) { state.set(step.id, 'pending'); await checkpoint(options, { stepId: step.id, agentId: step.agent, status: 'pending' }); }
 
   const runStep = async (step: WorkflowStep): Promise<void> => {
     if (options?.signal?.aborted) {
@@ -108,6 +108,7 @@ export async function executeWorkflow(
     const timeoutMs = boundedInteger(step.timeout_ms, timeoutDefault, 1000, 600000);
     const maxRetries = boundedInteger(step.retries, retries, 0, 5);
     let finalResult: AgentExecutionResult | undefined;
+    let attemptsMade = 0;
     let worktreePath: string | undefined;
     try {
       if (options?.repositoryPath) {
@@ -132,6 +133,7 @@ export async function executeWorkflow(
           : undefined,
       };
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        attemptsMade = attempt + 1;
         throwIfAborted(options?.signal);
         await checkpoint(options, { stepId: step.id, agentId: step.agent, status: 'running', attempt: attempt + 1, worktreePath });
         const attemptController = new AbortController();
@@ -169,7 +171,7 @@ export async function executeWorkflow(
       outputs[step.id] = result.output; outputs[`step_${step.id}`] = result.output;
       if (step.output_var) outputs[step.output_var] = result.output;
       options?.stream?.onAgentComplete?.(step.agent, result.output);
-      await checkpoint(options, { stepId: step.id, agentId: step.agent, status: 'completed', attempt: maxRetries + 1, output: result.output, worktreePath });
+      await checkpoint(options, { stepId: step.id, agentId: step.agent, status: 'completed', attempt: attemptsMade, output: result.output, worktreePath });
     } else {
       state.set(step.id, 'failed'); failureReasons.set(step.id, result.error || 'Step failed');
       options?.stream?.onAgentFailed?.(step.agent, result.error || 'Step failed');
