@@ -40,13 +40,13 @@ initDatabase();
 export async function query<T = unknown>(
   text: string,
   params?: unknown[]
-): Promise<pg.QueryResult<T>> {
+): Promise<pg.QueryResult<T & pg.QueryResultRow>> {
   if (!dbReady || !pool) {
     return { rows: [], rowCount: 0, command: '', oid: 0, fields: [] } as any;
   }
   
   const start = Date.now();
-  const result = await pool.query(text, params) as pg.QueryResult<T>;
+  const result = await pool.query(text, params) as pg.QueryResult<T & pg.QueryResultRow>;
   const duration = Date.now() - start;
   console.log('Executed query', { text: text.substring(0, 50), duration, rows: result.rowCount });
   return result;
