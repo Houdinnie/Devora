@@ -113,7 +113,7 @@ app.use((err: ErrorWithStatus, _req: Request, res: Response, _next: NextFunction
 });
 
 if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
-  console.warn('CORS_ORIGIN is empty: browser-origin requests are denied until an allowlist is configured.');
+  console.warn('CORS_ORIGIN is empty: only same-origin browser requests are allowed.');
 }
 
 app.listen(PORT, localDev ? '127.0.0.1' : '0.0.0.0', async () => {
