@@ -4,7 +4,7 @@ const { Pool } = pg;
 
 const connectionString = process.env.DATABASE_URL || process.env.DATABASE_URL_SYNC;
 
-let pool: pg.Pool;
+let pool: pg.Pool | null = null;
 let dbReady = false;
 
 async function initDatabase() {
@@ -31,7 +31,7 @@ async function initDatabase() {
     console.log('✓ PostgreSQL connected');
   } catch (error) {
     console.log('⚠ PostgreSQL connection failed - using in-memory mode');
-    pool = null as any;
+    pool = null;
   }
 }
 
@@ -46,7 +46,7 @@ export async function query<T = unknown>(
   }
   
   const start = Date.now();
-  const result = await pool.query<T>(text, params);
+  const result = await pool.query(text, params) as pg.QueryResult<T>;
   const duration = Date.now() - start;
   console.log('Executed query', { text: text.substring(0, 50), duration, rows: result.rowCount });
   return result;
