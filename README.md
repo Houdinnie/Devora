@@ -51,14 +51,13 @@ Devora is a production-ready AI agency system that combines:
 
 **Option A: Docker (Recommended)**
 ```bash
-cd docker
-docker-compose up -d
+docker compose --env-file ../.env up -d
 ```
 
 **Option B: Local PostgreSQL**
 1. Download from https://www.postgresql.org/download/
-2. Create user: `agency` with password: `agency123`
-3. Create database: `agency`
+2. Create a dedicated user with a strong password.
+3. Create the database named in `DATABASE_URL`
 
 ### 1. Install Dependencies
 ```bash
@@ -68,7 +67,7 @@ npm install
 ### 2. Configure Environment
 ```bash
 cp .env.example .env
-# Update DATABASE_URL if needed
+# Set unique API_KEY and strong POSTGRES_PASSWORD values before starting
 ```
 
 ### 2. Start the Server
@@ -86,7 +85,7 @@ curl http://localhost:3000/health
 curl -H "Authorization: Bearer $API_KEY" http://localhost:3000/api/agent
 
 # Run workflow
-curl -X POST -H "Authorization: Bearer agency-dev-key" \
+curl -X POST -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   http://localhost:3000/api/workflow/run \
   -d '{"workflow": "code-review", "inputs": {"repo_url": "https://github.com/..."}}'
@@ -205,15 +204,13 @@ docker-compose up -d
 
 Services:
 - **API**: Port 3000
-- **PostgreSQL**: Port 5432
-- **Redis**: Port 6379
-- **Ollama**: Port 11434
+- **PostgreSQL**, **Redis**, and **Ollama** are internal to the Compose network by default
 
 ## 🔐 Authentication
 
-Default API key: `agency-dev-key-change-in-production`
+Devora has no built-in default API key. Configure a unique `API_KEY` (at least 32 characters) before running in production. The environment key is a bootstrap administrator credential; keep it out of source control and rotate it if exposed. Set `CORS_ORIGIN` to a comma-separated allowlist of browser origins. Database API keys are stored as SHA-256 hashes, support expiry/revocation, and are returned only once when created via `/api/apikeys`.
 
-Create new keys via `/api/apikeys` endpoint.
+The Compose stack binds the API to localhost by default and keeps PostgreSQL, Redis, and Ollama internal to the Compose network. Set strong database credentials in your local `.env` file.
 
 ## 📁 Project Structure
 
