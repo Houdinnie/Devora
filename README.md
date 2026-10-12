@@ -217,9 +217,11 @@ The Compose stack binds the API to localhost by default and keeps PostgreSQL, Re
 
 Workflow steps now support bounded parallel execution (`concurrency`, default 3; maximum 16), dependency validation, retries (`retries`, default 1 retry), and per-step timeouts (`timeout_ms`, default 120000; maximum 600000). Independent steps may run together; a dependent step starts only after all its dependencies complete successfully. Failed dependencies are skipped, cycles and unknown dependencies are reported, and cancellation propagates to supported model HTTP requests.
 
-A running workflow can be cancelled with `POST /api/workflow/runs/:runId/cancel`, using the `runId` returned when starting the workflow. Cancellation controllers are process-local, so this endpoint currently targets runs active in the same API process; durable cancellation across restarts/replicas remains future work.
+A running workflow can be cancelled with `POST /api/workflow/runs/:runId/cancel`. Cancellation requests are persisted in PostgreSQL and polled by the owning worker, so a request sent to another API instance can cancel the run as long as all instances use the same database. Same-process cancellation is immediate. Inspect persisted run and step state with `GET /api/workflow/runs/:runId`.
 
-For isolated code changes, `src/orchestrator/worktree-manager.ts` provides a local Git worktree helper. Configure `DEVORA_REPOSITORIES_DIR` as an allow-listed parent directory and optionally `DEVORA_WORKTREE_DIR` as the worktree root. Only local repositories beneath the allow-list are accepted; remote URLs and shell-based command execution are rejected. This utility is not yet automatically invoked by agent workflows.
+Per-step checkpoints (status, attempt, output/error, timestamps, and worktree path) are stored in `workflow_run_steps`. Apply `src/db/schema.sql` to a new database, or run `src/db/migrations/002_workflow_checkpoints.sql` against an existing database before deploying this version.
+
+To provide an isolated workspace to a workflow, pass `repositoryPath` and optionally `baseRef` to `POST /api/workflow/run`. Configure `DEVORA_REPOSITORIES_DIR` as an allow-listed parent directory and optionally `DEVORA_WORKTREE_DIR` as the worktree root. Each step gets a detached worktree and its path is included in the agent context and checkpoint. Remote URLs and paths outside the allow-list are rejected. Worktrees are deliberately retained after a run so generated changes are not discarded; remove them after reviewing/committing the result. Important: the current agent runtime is LLM-prompt based and does not yet expose a shell/file-edit tool API, so providing a worktree gives agents a safe workspace reference but does not itself execute code edits.
 
 ## 📁 Project Structure
 
