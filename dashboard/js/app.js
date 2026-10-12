@@ -1,19 +1,13 @@
-// ===== API Configuration =====
-const API_BASE = window.location.origin.includes('file:') ? 'http://localhost:3000' : '';
+// The dashboard is served by the API. file:// is deliberately unsupported.
+const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3000' : window.location.origin;
+let apiKey = ''; // Tab memory only: never source, URL, logs or browser storage.
+let dashboardConnected = false;
 function ic(name) {
     return `<svg class="ic" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 }
 function esc(v) {
     return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
-// Dev key the local server registers in src/api/server.ts. Never rendered in the UI.
-const API_KEY = 'agency-dev-key-change-in-production';
-
-const apiHeaders = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_KEY}`
-};
-
 // ===== Debug =====
 console.log('Devora Dashboard initializing...');
 console.log('API Base:', API_BASE);
@@ -24,7 +18,7 @@ function showToast(message, type = 'info') {
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
         <span class="toast-icon">${type === 'success' ? ic('check') : type === 'error' ? ic('x') : ic('info')}</span>
-        <span class="toast-message">${message}</span>
+        <span class="toast-message">${esc(message)}</span>
     `;
     document.body.appendChild(toast);
     setTimeout(() => toast.classList.add('show'), 10);
@@ -36,18 +30,47 @@ function showToast(message, type = 'info') {
 
 // ===== API Functions =====
 async function fetchAPI(endpoint, options = {}) {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}`, ...options.headers }
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || data.error || `API returned ${response.status}`);
+    return data;
+}
+
+async function connectDashboard(event) {
+    event.preventDefault();
+    const input = document.getElementById('connectionKey');
+    apiKey = input.value.trim();
+    input.value = '';
     try {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-            ...options,
-            headers: { ...apiHeaders, ...options.headers }
-        });
-        if (!response.ok) throw new Error(`API Error: ${response.status}`);
-        return await response.json();
+        await fetchAPI('/api');
+        await loadDashboardData();
+        dashboardConnected = true;
+        document.getElementById('connectionStatus').textContent = 'Authenticated. Key kept in this tab only.';
+        document.getElementById('apiKeyState').textContent = 'Connected (tab memory only)';
+        document.getElementById('chatStatus').textContent = 'Catalog connected. Chat execution requires a configured model; hosted providers may charge.';
+        setApiStatus(await checkHealth());
     } catch (error) {
-        console.error('API Error:', error.message);
-        showToast('API connection failed', 'error');
-        return null;
+        disconnectDashboard();
+        document.getElementById('connectionStatus').textContent = error.message;
     }
+}
+function disconnectDashboard() {
+    apiKey = '';
+    dashboardConnected = false;
+    document.getElementById('connectionKey').value = '';
+    document.getElementById('connectionStatus').textContent = 'Disconnected. Enter your local API key to load catalogs.';
+    document.getElementById('apiKeyState').textContent = 'Not connected';
+    document.getElementById('chatStatus').textContent = 'Connect the API above. No model has run.';
+    for (const selector of ['.agents-grid', '.skills-grid', '.workflows-grid', '.channels-grid']) {
+        document.querySelector(selector).innerHTML = '<p>Connect the API to load live data.</p>';
+    }
+    updateSidebarBadges({ agents: {count: 0}, skills: {count: 0} });
+    document.getElementById('liveSkillTotal').textContent = '-';
+    document.getElementById('statSessions').textContent = '-';
+    document.getElementById('statWorkflows').textContent = '-';
 }
 
 async function loadAgents() {
@@ -141,7 +164,7 @@ function setApiStatus(health) {
         const el = document.getElementById(id);
         if (el) { el.classList.remove('online', 'offline'); el.classList.add(dotClass); }
     }
-    const text = up ? 'API online' : 'API offline';
+    const text = up ? (dashboardConnected ? 'API authenticated' : 'API online, not connected') : 'API offline';
     const t = document.getElementById('apiStatusText'); if (t) t.textContent = text;
     const g = document.getElementById('gatewayText'); if (g) g.textContent = text;
     const d = document.getElementById('gatewayDetail');
@@ -209,26 +232,19 @@ chatInput.addEventListener('keypress', (e) => {
 async function sendMessage() {
     const message = chatInput.value.trim();
     if (!message) return;
-    
+    if (!dashboardConnected) { showToast('Connect the API first.', 'error'); return; }
+    if (!confirm('Run a configured model? Hosted providers may charge.')) return;
     addMessage('user', message);
     chatInput.value = '';
-    chatHistory.push({ role: 'user', content: message });
-    
-    // Show typing indicator
-    const typingEl = addMessage('ai', '<span class="typing">Thinking...</span>');
-    
+    const typingEl = addMessage('ai', 'Waiting for the API...');
     try {
-        // Try to use agent execution API
-        const response = await executeAgent('chat', message);
-        const reply = response?.result?.output || getAIResponse(message);
+        const response = await fetchAPI('/api/compose', { method: 'POST', body: JSON.stringify({ prompt: message, stream: false }) });
         typingEl.remove();
-        addMessage('ai', reply);
-        chatHistory.push({ role: 'assistant', content: reply });
+        addMessage('ai', response.output || response.error || 'The API returned no output.');
     } catch (error) {
         typingEl.remove();
-        addMessage('ai', getAIResponse(message));
+        addMessage('ai', `Request failed: ${error.message}. No fallback answer was generated.`);
     }
-    
     updateChatCount();
 }
 
@@ -239,7 +255,7 @@ function addMessage(type, content) {
     const messageEl = document.createElement('div');
     messageEl.className = type === 'user' ? 'message-user' : 'message-ai';
     messageEl.innerHTML = `
-        <div class="message-content">${content}</div>
+        <div class="message-content">${esc(content)}</div>
     `;
     
     messagesContainer.appendChild(messageEl);
@@ -258,28 +274,6 @@ function createMessagesContainer(container) {
     
     container.insertBefore(messagesContainer, container.querySelector('.quick-actions'));
     return messagesContainer;
-}
-
-function getAIResponse(message) {
-    const lower = message.toLowerCase();
-    
-    if (lower.includes('task')) {
-        return "I'll help you handle some tasks. Which agents would you like to deploy?";
-    }
-    if (lower.includes('workflow')) {
-        return "Let me show you the available workflows. We have Code Review, Startup Launch, Security Audit, and more.";
-    }
-    if (lower.includes('agent')) {
-        return "We have 12 specialized agents: Frontend Developer, Backend Architect, DevOps Engineer, Security Engineer, and more.";
-    }
-    if (lower.includes('code')) {
-        return "I can help you with code. Let me spawn the code review workflow for your repository.";
-    }
-    if (lower.includes('deploy')) {
-        return "I'll prepare the deployment. Let me coordinate with the DevOps agent.";
-    }
-    
-    return "I understand. How would you like to proceed? You can:\n- Run a workflow\n- Chat with specific agents\n- Schedule a task\n- Analyze your codebase";
 }
 
 function startChat(prompt) {
@@ -311,16 +305,10 @@ function addProvider() {
 
 // ===== Initialize =====
 async function initDashboard() {
-    console.log('Devora Dashboard loading...');
-    
-    const health = await checkHealth();
-    setApiStatus(health);
-    if (health.reachable) {
-        console.log('OK: connected to Devora API');
-        loadDashboardData();
-    } else {
-        console.log('WARN: API not available, showing the static placeholder cards');
-    }
+    disconnectDashboard();
+    document.getElementById('connectionForm').addEventListener('submit', connectDashboard);
+    document.getElementById('disconnectApi').addEventListener('click', disconnectDashboard);
+    setApiStatus(await checkHealth());
 }
 
 async function loadDashboardData() {
@@ -339,27 +327,28 @@ async function loadDashboardData() {
         // Update sidebar badges with real counts
         updateSidebarBadges({ ...stats, agents: { count: agents.length }, skills: { count: skills.length } });
         const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setText('liveSkillTotal', skills.length);
         setText('statSessions', sessions.length);
         setText('statWorkflows', workflows.length);
         
         // Update UI with real data
-        if (agents.length > 0) {
+        {
             updateAgentsGrid(agents);
         }
-        if (workflows.length > 0) {
+        {
             updateWorkflowsGrid(workflows);
         }
-        if (channels.length > 0) {
+        {
             updateChannelsGrid(channels);
         }
         if (sessions.length > 0) {
             document.getElementById('chatCount').textContent = `${sessions.length} sessions`;
         }
-        if (skills.length > 0) {
+        {
             updateSkillsGrid(skills);
         }
     } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        throw error;
     }
 }
 
@@ -415,7 +404,7 @@ function updateSkillsGrid(skills) {
                 <span class="skill-icon"><svg class="ic" aria-hidden="true"><use href="#i-zap"/></svg></span>
                 <span class="skill-name">${esc(skill.title || skill.name)}</span>
                 <label class="skill-toggle">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" checked disabled aria-label="Catalog only">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
@@ -509,7 +498,7 @@ function showModal(title, content, buttons = []) {
                 <h3>${title}</h3>
                 <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">${ic('x')}</button>
             </div>
-            <div class="modal-body">${content}</div>
+            <div class="modal-body">${esc(content)}</div>
             ${buttons.length ? `<div class="modal-footer">${buttons.map(b => `<button class="${b.class || 'btn'}" onclick="${b.onclick}">${b.label}</button>`).join('')}</div>` : ''}
         </div>
     `;
@@ -726,43 +715,6 @@ updateChatInputPosition();
 // Start dashboard
 initDashboard();
 
-// ===== API Key Management (BYOK) =====
-function saveApiKeys() {
-    const keys = {
-        openai: document.getElementById('openaiKey').value,
-        anthropic: document.getElementById('anthropicKey').value,
-        ollama: document.getElementById('ollamaUrl').value,
-        deepseek: document.getElementById('deepseekKey').value
-    };
-    
-    // Save to localStorage (BYOK pattern)
-    localStorage.setItem('devora_api_keys', JSON.stringify(keys));
-    
-    // Also update the in-memory API config
-    window.devoraApiKeys = keys;
-    
-    showToast('API keys saved locally!', 'success');
-    console.log('Saved API keys:', Object.keys(keys).filter(k => keys[k]));
-}
-
-function loadApiKeys() {
-    const saved = localStorage.getItem('devora_api_keys');
-    if (saved) {
-        const keys = JSON.parse(saved);
-        window.devoraApiKeys = keys;
-        
-        if (keys.openai) document.getElementById('openaiKey').value = keys.openai;
-        if (keys.anthropic) document.getElementById('anthropicKey').value = keys.anthropic;
-        if (keys.ollama) document.getElementById('ollamaUrl').value = keys.ollama;
-        if (keys.deepseek) document.getElementById('deepseekKey').value = keys.deepseek;
-        
-        console.log('Loaded API keys from localStorage');
-    }
-}
-
-// Load API keys on init
-loadApiKeys();
-
 // ===== Business Module Functions =====
 function addLead() {
     const company = document.getElementById('leadCompany')?.value;
@@ -797,34 +749,8 @@ function updateLeadStats() {
     if (countEl) countEl.textContent = leads.length;
 }
 
-// ===== Button Event Listeners =====
-setTimeout(() => {
-    console.log('Setting up button handlers...');
-    
-    const addAgentBtn = document.getElementById('addAgentBtn');
-    const addChannelBtn = document.getElementById('addChannelBtn');
-    const addSkillBtn = document.getElementById('addSkillBtn');
-    const uploadFilesNav = document.getElementById('uploadFilesNav');
-    
-    if (addAgentBtn) {
-        addAgentBtn.onclick = function() { console.log('Agent clicked'); showAddAgentModal(); };
-        console.log('OK: Add Agent button wired');
-    } else {
-        console.log('MISSING: Add Agent button not found');
-    }
-    
-    if (addChannelBtn) {
-        addChannelBtn.onclick = function() { console.log('Channel clicked'); showAddChannelModal(); };
-        console.log('OK: Add Channel button wired');
-    }
-    
-    if (addSkillBtn) {
-        addSkillBtn.onclick = function() { console.log('Skill clicked'); showAddSkillModal(); };
-        console.log('OK: Add Skill button wired');
-    }
-    
-    if (uploadFilesNav) {
-        uploadFilesNav.onclick = function() { console.log('Upload clicked'); showUploadModal(); };
-        console.log('OK: Upload button wired');
-    }
-}, 500);
+// Supported controls use external listeners under the default Helmet CSP.
+document.querySelector('.send-btn').addEventListener('click', sendMessage);
+document.querySelectorAll('.action-pill').forEach(button => {
+    button.addEventListener('click', () => startChat(button.textContent.trim()));
+});
