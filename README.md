@@ -8,7 +8,7 @@ This is a development project, not a finished autonomous software agency. Starti
 
 The default agent registry loads **59 agents across 14 divisions**: engineering, webdesign, SEO, operations, marketing, sales, product, HR, finance, strategy, testing, security, design, and specialized. These are Markdown prompt definitions, not 59 running processes. Other folders under `agents/` are not part of that registry.
 
-There are **45 Markdown skills** and **6 workflow templates**:
+There are **48 Markdown skills** and **6 workflow templates**:
 
 | Workflow | API identifier |
 | --- | --- |
@@ -201,3 +201,15 @@ docker/              Dockerfile and Compose configuration
 ## License
 
 MIT. See [LICENSE](LICENSE). Copyright (c) 2026 Ryan Panashe Murangariri.
+
+## Skill credits
+
+Three Devora-format Markdown adaptations are included, each retaining the full upstream MIT copyright and permission notice in its own file:
+
+| Devora skill | Upstream source | Scope |
+| --- | --- | --- |
+| `superpowers-workflow` | [obra/superpowers](https://github.com/obra/superpowers) | Planning, test-first changes, review and verification |
+| `matt-pocock-tdd` | [mattpocock/skills](https://github.com/mattpocock/skills) | Public-interface tests and one behavior per red/green slice |
+| `ui-ux-pro-max-review` | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Prioritized accessibility, interaction and visual review |
+
+These are selected prompt adaptations, not full imports. Upstream commit pins and notices are in each skill. No plugin, Claude-specific tool, Python search engine, design datasets or CLI was installed. They load in the existing flat `skills/*.md` catalog, bringing it from 45 to 48. Catalog presence does not mean the runtime applies a skill automatically; provide the skill text in agent context when you want it used. Devora's shell-free worker does not run their tests, tools or screenshot checks. The operator must supply real verification results.
