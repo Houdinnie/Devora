@@ -10,6 +10,7 @@ import { createSSEStream } from '../../streaming/sse.js';
 import { db } from '../../db/client.js';
 
 const router = Router();
+const activeWorkflowControllers = new Map<string, AbortController>();
 
 const RunWorkflowSchema = z.object({
   workflow: z.string().min(1),
@@ -73,6 +74,8 @@ router.post('/run', async (req: Request, res: Response) => {
     
     const runId = runResult.rows[0].id;
     
+    const controller = new AbortController();
+    activeWorkflowControllers.set(runId, controller);
     if (stream) {
       const sse = createSSEStream(res);
       
@@ -81,6 +84,7 @@ router.post('/run', async (req: Request, res: Response) => {
       try {
         const result = await executeWorkflow(workflowName, inputs || {}, {
           sessionId: session.id,
+          signal: controller.signal,
           inputs: inputs || {},
           outputs: {},
           stream: {
@@ -115,6 +119,8 @@ router.post('/run', async (req: Request, res: Response) => {
         
         sse.error(errorMessage);
         sse.close();
+      } finally {
+        activeWorkflowControllers.delete(runId);
       }
       
       return;
@@ -124,6 +130,7 @@ router.post('/run', async (req: Request, res: Response) => {
       inputs: inputs || {},
       outputs: {},
       sessionId: session.id,
+      signal: controller.signal,
     });
     
     await db.query(
@@ -138,6 +145,7 @@ router.post('/run', async (req: Request, res: Response) => {
       ]
     );
     
+    activeWorkflowControllers.delete(runId);
     await sessionStore.updateActivity(session.id);
     
     res.json({
